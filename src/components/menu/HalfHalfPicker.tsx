@@ -65,6 +65,7 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
       size,
       quantity: 1,
       unitPrice: price,
+      image_url: leftPizza.image_url,
       leftPizza,
       rightPizza,
     };

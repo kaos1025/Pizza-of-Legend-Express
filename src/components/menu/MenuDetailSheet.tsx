@@ -75,6 +75,7 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
       size: hasSizes ? size : undefined,
       quantity,
       unitPrice,
+      image_url: item.image_url,
     };
     addItem(cartItem);
     setAdded(true);

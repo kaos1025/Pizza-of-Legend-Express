@@ -16,6 +16,7 @@ interface OrderTrackingData {
     size?: string;
     quantity: number;
     unitPrice: number;
+    image_url?: string;
   }>;
 }
 

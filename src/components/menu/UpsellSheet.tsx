@@ -77,6 +77,7 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
       },
       quantity: 1,
       unitPrice: item.price,
+      image_url: item.image_url,
     };
     addItem(cartItem);
     setAddedIds((prev) => new Set(prev).add(item.id));

@@ -1,10 +1,16 @@
 'use client';
 
+import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/utils';
 import type { Locale } from '@/types/menu';
+
+const typeEmoji: Record<string, string> = {
+  pizza: '🍕', half_half: '🍕', set_menu: '🎁',
+  side: '🍗', drink: '🥤', sauce: '🫙',
+};
 
 export const OrderSummary = () => {
   const t = useTranslations('checkout');
@@ -25,20 +31,30 @@ export const OrderSummary = () => {
           <div className="space-y-2">
             {items.map((item) => {
               const name = item.name[locale] || item.name.en;
+              const imgUrl = item.image_url || item.leftPizza?.image_url || item.selectedComponents?.pizza?.image_url;
               return (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <div className="flex-1">
-                    <span>{name}</span>
-                    {item.size && (
-                      <span className="text-gray-400 ml-1">
-                        ({item.size === 'R' ? 'Regular' : item.size === 'L' ? 'Large' : 'Small'})
-                      </span>
-                    )}
-                    {item.quantity > 1 && (
-                      <span className="text-gray-400"> ×{item.quantity}</span>
+                <div key={item.id} className="flex items-center gap-2.5 text-sm">
+                  <div className="relative w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {imgUrl ? (
+                      <Image src={imgUrl} alt="" fill sizes="36px" className="object-cover" />
+                    ) : (
+                      <span className="text-base">{typeEmoji[item.type] || '🍕'}</span>
                     )}
                   </div>
-                  <span className="font-medium">{formatPrice(item.unitPrice * item.quantity)}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="truncate block">{name}</span>
+                    {item.size && (
+                      <span className="text-gray-400 text-xs">
+                        {item.size === 'R' ? 'Regular' : item.size === 'L' ? 'Large' : 'Small'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {item.quantity > 1 && (
+                      <span className="text-gray-400 text-xs">×{item.quantity}</span>
+                    )}
+                    <span className="font-medium">{formatPrice(item.unitPrice * item.quantity)}</span>
+                  </div>
                 </div>
               );
             })}

@@ -155,6 +155,7 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
       size: setMenu.price ? undefined : size,
       quantity: 1,
       unitPrice: price,
+      image_url: selectedPizza?.image_url || leftHalf?.image_url,
       setMenuId: setMenu.id,
       selectedComponents: {
         pizza: selectedPizza || undefined,

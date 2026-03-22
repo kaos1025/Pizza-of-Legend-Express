@@ -191,6 +191,7 @@ export interface CartItem {
   size?: 'R' | 'L' | 'S';
   quantity: number;
   unitPrice: number;
+  image_url?: string;
   /** For half_half: left pizza selection */
   leftPizza?: Pizza;
   /** For half_half: right pizza selection */
