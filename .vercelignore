@@ -3,5 +3,3 @@
 .env*
 supabase/
 01_supabase_schema.sql
-02_menu_data.json
-*.sql
