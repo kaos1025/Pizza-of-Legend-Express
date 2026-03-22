@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getHotels } from '@/lib/menu-data';
 import type { Locale } from '@/types/menu';
 
@@ -24,14 +23,12 @@ export const HotelSelect = ({ value, onChange }: HotelSelectProps) => {
   const [hotels, setHotels] = useState<HotelOption[]>([]);
 
   useEffect(() => {
-    // Try fetching from Supabase API first (returns UUID ids)
     fetch('/api/hotels')
       .then((res) => res.json())
       .then((data) => {
         if (data.hotels && data.hotels.length > 0) {
           setHotels(data.hotels);
         } else {
-          // Fallback to JSON data
           const jsonHotels = getHotels();
           setHotels(jsonHotels.map((h) => ({
             id: h.id,
@@ -42,7 +39,6 @@ export const HotelSelect = ({ value, onChange }: HotelSelectProps) => {
         }
       })
       .catch(() => {
-        // Fallback to JSON data
         const jsonHotels = getHotels();
         setHotels(jsonHotels.map((h) => ({
           id: h.id,
@@ -64,18 +60,20 @@ export const HotelSelect = ({ value, onChange }: HotelSelectProps) => {
       <label className="block text-sm font-medium text-pizza-dark mb-1">
         {t('hotelLabel')}
       </label>
-      <Select value={value} onValueChange={(v) => { if (v) onChange(v); }}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={t('hotelPlaceholder')} />
-        </SelectTrigger>
-        <SelectContent>
-          {hotels.map((hotel) => (
-            <SelectItem key={hotel.id} value={hotel.id}>
-              {getName(hotel)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-pizza-dark focus:border-pizza-red focus:ring-2 focus:ring-pizza-red/20 outline-none"
+      >
+        <option value="" disabled>
+          {t('hotelPlaceholder')}
+        </option>
+        {hotels.map((hotel) => (
+          <option key={hotel.id} value={hotel.id}>
+            {getName(hotel)}
+          </option>
+        ))}
+      </select>
     </div>
   );
 };
