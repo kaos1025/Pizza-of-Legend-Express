@@ -1,0 +1,100 @@
+{
+  "brand": {
+    "name": "Pizza of Legend",
+    "tagline": "Authentic Local Pizza"
+  },
+  "nav": {
+    "menu": "Menu",
+    "cart": "Cart",
+    "orders": "Orders"
+  },
+  "categories": {
+    "half_half": "Legendary Half & Half",
+    "pizza": "Signature Pizzas",
+    "set_menu": "Value Sets",
+    "side": "Sides",
+    "drink": "Drinks",
+    "sauce": "Sauces & Extras"
+  },
+  "menu": {
+    "addToCart": "Add to Cart",
+    "selectSize": "Select Size",
+    "regular": "Regular (12\")",
+    "large": "Large (14\")",
+    "small": "Small",
+    "quantity": "Quantity",
+    "popular": "Popular",
+    "chefs_pick": "Chef's Pick",
+    "signature": "Signature",
+    "viewDetails": "View Details"
+  },
+  "halfHalf": {
+    "title": "Half & Half",
+    "description": "Pick any 2 flavors you love",
+    "leftHalf": "Left Half",
+    "rightHalf": "Right Half",
+    "selectPizza": "Select a pizza",
+    "fixedPrice": "Fixed price regardless of combination"
+  },
+  "setMenu": {
+    "title": "Value Sets",
+    "step1": "Step 1: Choose Pizza",
+    "step2spaghetti": "Step 2: Choose Spaghetti",
+    "step2side": "Step 2: Choose Side",
+    "step3side": "Step 3: Choose Side",
+    "step3": "Add to Cart",
+    "includes": "Includes",
+    "cokeIncluded": "Coca-Cola included",
+    "pickleIncluded": "Pickle included"
+  },
+  "cart": {
+    "title": "Your Cart",
+    "empty": "Your cart is empty",
+    "emptyDesc": "Add some delicious pizza to get started!",
+    "total": "Total",
+    "checkout": "Checkout",
+    "viewCart": "View Cart",
+    "items": "{count} items",
+    "remove": "Remove",
+    "continueShopping": "Continue Shopping"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "orderSummary": "Order Summary",
+    "hotelLabel": "Select Hotel",
+    "hotelPlaceholder": "Choose your hotel",
+    "roomLabel": "Room Number",
+    "roomPlaceholder": "Enter room number",
+    "messengerLabel": "Messenger ID (Optional)",
+    "messengerPlaceholder": "WhatsApp or WeChat ID",
+    "specialLabel": "Special Requests (Optional)",
+    "specialPlaceholder": "Any special instructions...",
+    "paymentNotice": "Pay to the staff at your door (Cash or Card)",
+    "placeOrder": "Place Order",
+    "total": "Total Amount"
+  },
+  "order": {
+    "title": "Order Tracking",
+    "orderNumber": "Order Number",
+    "status": {
+      "pending": "Order Received",
+      "confirmed": "Cooking",
+      "delivering": "On the Way",
+      "completed": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "orderDetails": "Order Details",
+    "thankYou": "Thank you for your order!",
+    "estimatedTime": "Estimated delivery: 30-45 min",
+    "backToMenu": "Back to Menu"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try Again",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "confirm": "Confirm"
+  }
+}

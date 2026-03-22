@@ -1,0 +1,100 @@
+{
+  "brand": {
+    "name": "传奇披萨",
+    "tagline": "正宗本地披萨"
+  },
+  "nav": {
+    "menu": "菜单",
+    "cart": "购物车",
+    "orders": "订单"
+  },
+  "categories": {
+    "half_half": "传奇半半披萨",
+    "pizza": "招牌披萨",
+    "set_menu": "超值套餐",
+    "side": "小食",
+    "drink": "饮品",
+    "sauce": "酱料及其他"
+  },
+  "menu": {
+    "addToCart": "加入购物车",
+    "selectSize": "选择尺寸",
+    "regular": "常规 (12英寸)",
+    "large": "大号 (14英寸)",
+    "small": "小号",
+    "quantity": "数量",
+    "popular": "人气",
+    "chefs_pick": "主厨推荐",
+    "signature": "招牌",
+    "viewDetails": "查看详情"
+  },
+  "halfHalf": {
+    "title": "半半披萨",
+    "description": "任选两种你喜欢的口味",
+    "leftHalf": "左半边",
+    "rightHalf": "右半边",
+    "selectPizza": "选择一款披萨",
+    "fixedPrice": "无论任何组合，统一固定价格"
+  },
+  "setMenu": {
+    "title": "超值套餐",
+    "step1": "第1步：选择披萨",
+    "step2spaghetti": "第2步：选择意面",
+    "step2side": "第2步：选择小食",
+    "step3side": "第3步：选择小食",
+    "step3": "加入购物车",
+    "includes": "包含",
+    "cokeIncluded": "附赠可口可乐",
+    "pickleIncluded": "附赠泡菜"
+  },
+  "cart": {
+    "title": "您的购物车",
+    "empty": "购物车是空的",
+    "emptyDesc": "快来添加美味的披萨吧！",
+    "total": "合计",
+    "checkout": "结账",
+    "viewCart": "查看购物车",
+    "items": "{count} 件商品",
+    "remove": "删除",
+    "continueShopping": "继续选购"
+  },
+  "checkout": {
+    "title": "结账",
+    "orderSummary": "订单摘要",
+    "hotelLabel": "选择酒店",
+    "hotelPlaceholder": "请选择您的酒店",
+    "roomLabel": "房间号",
+    "roomPlaceholder": "请输入房间号",
+    "messengerLabel": "通讯账号（选填）",
+    "messengerPlaceholder": "WhatsApp 或 微信号",
+    "specialLabel": "特殊要求（选填）",
+    "specialPlaceholder": "任何特殊说明...",
+    "paymentNotice": "向送货员支付现金或刷卡",
+    "placeOrder": "提交订单",
+    "total": "总金额"
+  },
+  "order": {
+    "title": "订单追踪",
+    "orderNumber": "订单编号",
+    "status": {
+      "pending": "已接单",
+      "confirmed": "制作中",
+      "delivering": "配送中",
+      "completed": "已送达",
+      "cancelled": "已取消"
+    },
+    "orderDetails": "订单详情",
+    "thankYou": "感谢您的订购！",
+    "estimatedTime": "预计送达时间：30-45 分钟",
+    "backToMenu": "返回菜单"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "出了点问题",
+    "retry": "重试",
+    "close": "关闭",
+    "back": "返回",
+    "next": "下一步",
+    "confirm": "确认"
+  }
+}

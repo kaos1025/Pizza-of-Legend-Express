@@ -1,0 +1,100 @@
+{
+  "brand": {
+    "name": "伝説のピザ",
+    "tagline": "本格ローカルピザ"
+  },
+  "nav": {
+    "menu": "メニュー",
+    "cart": "カート",
+    "orders": "注文履歴"
+  },
+  "categories": {
+    "half_half": "伝説のハーフ＆ハーフ",
+    "pizza": "シグネチャーピザ",
+    "set_menu": "お得なセット",
+    "side": "サイドメニュー",
+    "drink": "ドリンク",
+    "sauce": "ソース・その他"
+  },
+  "menu": {
+    "addToCart": "カートに追加",
+    "selectSize": "サイズを選択",
+    "regular": "レギュラー (12インチ)",
+    "large": "ラージ (14インチ)",
+    "small": "スモール",
+    "quantity": "数量",
+    "popular": "人気",
+    "chefs_pick": "シェフのおすすめ",
+    "signature": "シグネチャー",
+    "viewDetails": "詳細を見る"
+  },
+  "halfHalf": {
+    "title": "ハーフ＆ハーフ",
+    "description": "お好きな2つの味を選べます",
+    "leftHalf": "左半分",
+    "rightHalf": "右半分",
+    "selectPizza": "ピザを選択",
+    "fixedPrice": "どの組み合わせでも固定価格"
+  },
+  "setMenu": {
+    "title": "お得なセット",
+    "step1": "ステップ1：ピザを選択",
+    "step2spaghetti": "ステップ2：スパゲッティを選択",
+    "step2side": "ステップ2：サイドを選択",
+    "step3side": "ステップ3：サイドを選択",
+    "step3": "カートに追加",
+    "includes": "セット内容",
+    "cokeIncluded": "コカ・コーラ付き",
+    "pickleIncluded": "ピクルス付き"
+  },
+  "cart": {
+    "title": "カート",
+    "empty": "カートは空です",
+    "emptyDesc": "おいしいピザを追加しましょう！",
+    "total": "合計",
+    "checkout": "お会計へ",
+    "viewCart": "カートを見る",
+    "items": "{count} 点",
+    "remove": "削除",
+    "continueShopping": "買い物を続ける"
+  },
+  "checkout": {
+    "title": "お会計",
+    "orderSummary": "注文内容",
+    "hotelLabel": "ホテルを選択",
+    "hotelPlaceholder": "ご宿泊のホテルを選択",
+    "roomLabel": "部屋番号",
+    "roomPlaceholder": "部屋番号を入力",
+    "messengerLabel": "メッセンジャーID（任意）",
+    "messengerPlaceholder": "WhatsApp または WeChat ID",
+    "specialLabel": "特別なご要望（任意）",
+    "specialPlaceholder": "特別な指示があればご記入ください...",
+    "paymentNotice": "到着時に配達員にお支払い（現金またはカード）",
+    "placeOrder": "注文を確定する",
+    "total": "合計金額"
+  },
+  "order": {
+    "title": "注文追跡",
+    "orderNumber": "注文番号",
+    "status": {
+      "pending": "注文受付済み",
+      "confirmed": "調理中",
+      "delivering": "配達中",
+      "completed": "配達完了",
+      "cancelled": "キャンセル済み"
+    },
+    "orderDetails": "注文詳細",
+    "thankYou": "ご注文ありがとうございます！",
+    "estimatedTime": "お届け目安：30〜45分",
+    "backToMenu": "メニューに戻る"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "retry": "再試行",
+    "close": "閉じる",
+    "back": "戻る",
+    "next": "次へ",
+    "confirm": "確認"
+  }
+}
