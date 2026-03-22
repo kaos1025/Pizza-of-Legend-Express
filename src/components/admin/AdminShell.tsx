@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { AdminNav } from './AdminNav';
 
 interface AdminShellProps {
@@ -12,7 +13,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
       <header className="bg-pizza-dark text-white sticky top-0 z-50 shadow-md">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🍕</span>
+            <Image src="/images/logo.jpg" alt="Pizza of Legend" width={36} height={36} className="rounded-lg object-contain" />
             <h1 className="text-lg font-bold">피자오브레전드</h1>
           </div>
           <div className="flex items-center gap-3">
