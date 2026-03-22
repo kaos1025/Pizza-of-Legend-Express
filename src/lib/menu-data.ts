@@ -105,6 +105,7 @@ export async function fetchPizzas(): Promise<Pizza[]> {
       price_L: prices.find((p) => p.size === 'L')?.price || 0,
       badge: row.badge || null,
       half_half: row.is_half_half_available || false,
+      image_url: row.image_url || undefined,
     };
   });
 }
@@ -133,6 +134,7 @@ export async function fetchSides(): Promise<Side[]> {
       price: prices.find((p) => p.size === null)?.price || 0,
       sub_category: '', // Not stored in DB; components can ignore
       desc_en: row.description_en || undefined,
+      image_url: row.image_url || undefined,
     };
   });
 }
@@ -159,6 +161,7 @@ export async function fetchDrinks(): Promise<Drink[]> {
       name_zh: row.name_zh || '',
       name_ja: row.name_ja || '',
       price: prices.find((p) => p.size === null)?.price || 0,
+      image_url: row.image_url || undefined,
     };
   });
 }
@@ -185,6 +188,7 @@ export async function fetchSauces(): Promise<Sauce[]> {
       name_zh: row.name_zh || '',
       name_ja: row.name_ja || '',
       price: prices.find((p) => p.size === null)?.price || 0,
+      image_url: row.image_url || undefined,
     };
   });
 }
@@ -222,6 +226,7 @@ export async function fetchSetMenus(): Promise<SetMenu[]> {
       price_L: lPrice,
       badge: row.badge || null,
       components: [], // Components loaded separately from set_menu_components
+      image_url: row.image_url || undefined,
     };
   });
 }

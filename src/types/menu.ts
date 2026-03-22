@@ -104,6 +104,7 @@ export interface Pizza {
   price_L: number;
   badge: string | null;
   half_half: boolean;
+  image_url?: string;
 }
 
 // --- Set Menu ---
@@ -125,6 +126,7 @@ export interface SetMenu {
   sizes?: null;
   badge?: string | null;
   components: string[];
+  image_url?: string;
 }
 
 // --- Side ---
@@ -137,6 +139,7 @@ export interface Side {
   price: number;
   sub_category: string;
   desc_en?: string;
+  image_url?: string;
 }
 
 // --- Drink ---
@@ -147,6 +150,7 @@ export interface Drink {
   name_zh: string;
   name_ja: string;
   price: number;
+  image_url?: string;
 }
 
 // --- Sauce ---
@@ -157,6 +161,7 @@ export interface Sauce {
   name_zh: string;
   name_ja: string;
   price: number;
+  image_url?: string;
 }
 
 // --- Full Menu Data ---

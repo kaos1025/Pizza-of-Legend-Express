@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { Header } from '@/components/layout/Header';
 import { CategoryNav } from '@/components/menu/CategoryNav';
@@ -12,8 +13,8 @@ import { CartSummaryBar } from '@/components/cart/CartSummaryBar';
 import { UpsellSheet } from '@/components/menu/UpsellSheet';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/utils';
-import { getPizzas, getSides, getDrinks, getSauces, getSetMenus } from '@/lib/menu-data';
-import type { Locale, Pizza, SetMenu, CartItem } from '@/types/menu';
+import { getPizzas, getSides, getDrinks, getSauces, getSetMenus, fetchPizzas, fetchSides, fetchDrinks, fetchSauces, fetchSetMenus } from '@/lib/menu-data';
+import type { Locale, Pizza, Side, Drink, Sauce, SetMenu, CartItem } from '@/types/menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
@@ -42,11 +43,21 @@ export default function HomePage() {
   const [quantity, setQuantity] = useState(1);
   const [showUpsell, setShowUpsell] = useState(false);
 
-  const pizzas = getPizzas();
-  const sides = getSides();
-  const drinks = getDrinks();
-  const sauces = getSauces();
-  const setMenus = getSetMenus();
+  // Menu data — start with sync JSON, then upgrade to Supabase (with image_url)
+  const [pizzas, setPizzas] = useState<Pizza[]>(getPizzas());
+  const [sides, setSides] = useState<Side[]>(getSides());
+  const [drinks, setDrinks] = useState<Drink[]>(getDrinks());
+  const [sauces, setSauces] = useState<Sauce[]>(getSauces());
+  const [setMenus, setSetMenus] = useState<SetMenu[]>(getSetMenus());
+
+  useEffect(() => {
+    // Fetch from Supabase to get image_url and latest data
+    fetchPizzas().then(setPizzas);
+    fetchSides().then(setSides);
+    fetchDrinks().then(setDrinks);
+    fetchSauces().then(setSauces);
+    fetchSetMenus().then(setSetMenus);
+  }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getName = (item: any) => item[`name_${locale}`] || item.name_en;
@@ -118,6 +129,7 @@ export default function HomePage() {
                 priceR={pizza.price_R}
                 priceL={pizza.price_L}
                 badge={pizza.badge}
+                imageUrl={pizza.image_url}
                 onClick={() => setSelectedPizza(pizza)}
               />
             ))}
@@ -137,6 +149,7 @@ export default function HomePage() {
                 priceR={setMenu.price_R}
                 priceL={setMenu.price_L}
                 badge={setMenu.badge}
+                imageUrl={setMenu.image_url}
                 onClick={() => setSelectedSetMenu(setMenu)}
               />
             ))}
@@ -152,6 +165,7 @@ export default function HomePage() {
                 id={side.id}
                 name={side as unknown as Record<string, string>}
                 price={side.price}
+                imageUrl={side.image_url}
                 onClick={() => handleAddSimpleItem(side, 'side')}
               />
             ))}
@@ -167,6 +181,7 @@ export default function HomePage() {
                 id={drink.id}
                 name={drink as unknown as Record<string, string>}
                 price={drink.price}
+                imageUrl={drink.image_url}
                 onClick={() => handleAddSimpleItem(drink, 'drink')}
               />
             ))}
@@ -182,6 +197,7 @@ export default function HomePage() {
                 id={sauce.id}
                 name={sauce as unknown as Record<string, string>}
                 price={sauce.price}
+                imageUrl={sauce.image_url}
                 onClick={() => handleAddSimpleItem(sauce, 'sauce')}
               />
             ))}
@@ -194,8 +210,18 @@ export default function HomePage() {
         <SheetContent side="bottom" className="rounded-t-3xl">
           {selectedPizza && (
             <div className="py-4">
-              <div className="w-full h-48 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center mb-4">
-                <span className="text-7xl">🍕</span>
+              <div className="relative w-full h-48 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
+                {selectedPizza.image_url ? (
+                  <Image
+                    src={selectedPizza.image_url}
+                    alt={getName(selectedPizza)}
+                    fill
+                    sizes="430px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="text-7xl">🍕</span>
+                )}
               </div>
               <SheetHeader>
                 <SheetTitle className="text-xl text-pizza-dark">{getName(selectedPizza)}</SheetTitle>

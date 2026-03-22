@@ -1,20 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/lib/store';
-import { getPizzas, getHalfHalfConfig } from '@/lib/menu-data';
+import { getPizzas, getHalfHalfConfig, fetchPizzas } from '@/lib/menu-data';
 import type { Locale, Pizza, CartItem } from '@/types/menu';
 
 export const HalfHalfPicker = () => {
   const t = useTranslations('halfHalf');
   const locale = useLocale() as Locale;
   const addItem = useCartStore((state) => state.addItem);
-  const pizzas = getPizzas();
+  const [pizzas, setPizzas] = useState(getPizzas());
   const config = getHalfHalfConfig();
+
+  useEffect(() => {
+    fetchPizzas().then(setPizzas);
+  }, []);
 
   const [leftPizzaId, setLeftPizzaId] = useState<string>('');
   const [rightPizzaId, setRightPizzaId] = useState<string>('');
@@ -59,11 +64,19 @@ export const HalfHalfPicker = () => {
       {/* Visual half circle */}
       <div className="flex justify-center mb-4">
         <div className="w-48 h-48 rounded-full border-4 border-pizza-red flex overflow-hidden">
-          <div className="w-1/2 bg-orange-100 flex items-center justify-center border-r-2 border-pizza-red">
-            <span className="text-3xl">{leftPizza ? '🍕' : '?'}</span>
+          <div className="relative w-1/2 bg-orange-100 flex items-center justify-center border-r-2 border-pizza-red overflow-hidden">
+            {leftPizza?.image_url ? (
+              <Image src={leftPizza.image_url} alt={getLocaleName(leftPizza)} fill className="object-cover" sizes="96px" />
+            ) : (
+              <span className="text-3xl">{leftPizza ? '🍕' : '?'}</span>
+            )}
           </div>
-          <div className="w-1/2 bg-orange-50 flex items-center justify-center">
-            <span className="text-3xl">{rightPizza ? '🍕' : '?'}</span>
+          <div className="relative w-1/2 bg-orange-50 flex items-center justify-center overflow-hidden">
+            {rightPizza?.image_url ? (
+              <Image src={rightPizza.image_url} alt={getLocaleName(rightPizza)} fill className="object-cover" sizes="96px" />
+            ) : (
+              <span className="text-3xl">{rightPizza ? '🍕' : '?'}</span>
+            )}
           </div>
         </div>
       </div>

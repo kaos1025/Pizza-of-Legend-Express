@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { formatPrice } from '@/lib/utils';
 import type { Locale } from '@/types/menu';
@@ -35,12 +37,14 @@ export const MenuCard = ({
   priceR,
   priceL,
   badge,
+  imageUrl,
   onClick,
 }: MenuCardProps) => {
   const locale = useLocale() as Locale;
+  const [imgError, setImgError] = useState(false);
   const localeName = name[`name_${locale}`] || name.name_en;
   const localeDesc = description
-    ? description[`desc_${locale}`] || description.desc_en
+    ? description[`desc_${locale}`] || description[`description_${locale}`] || description.desc_en || description.description_en
     : undefined;
 
   const displayPrice = price
@@ -48,6 +52,8 @@ export const MenuCard = ({
     : priceR && priceL
     ? `${formatPrice(priceR)} / ${formatPrice(priceL)}`
     : '';
+
+  const hasImage = imageUrl && !imgError;
 
   return (
     <div
@@ -58,12 +64,24 @@ export const MenuCard = ({
       aria-label={localeName}
       className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-shadow active:scale-[0.98]"
     >
-      {/* Image placeholder */}
-      <div className="relative w-full h-44 bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
-        <span className="text-6xl">🍕</span>
+      {/* Image */}
+      <div className="relative w-full h-44 bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center overflow-hidden">
+        {hasImage ? (
+          <Image
+            src={imageUrl}
+            alt={localeName || ''}
+            fill
+            sizes="(max-width: 430px) 100vw, 430px"
+            className="object-cover"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <span className="text-6xl">🍕</span>
+        )}
         {badge && badgeLabels[badge] && (
           <span
-            className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold ${
+            className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold z-10 ${
               badgeColors[badge] || 'bg-gray-500 text-white'
             }`}
           >
