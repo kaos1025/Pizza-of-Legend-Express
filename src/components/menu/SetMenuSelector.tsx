@@ -22,8 +22,27 @@ interface StepConfig {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getName = (item: any, locale: string) =>
+const getItemName = (item: any, locale: string) =>
   item[`name_${locale}`] || item.name_en;
+
+// Identify set type by name_en pattern (works with both JSON text IDs and Supabase UUIDs)
+function identifySetType(setMenu: SetMenu): string {
+  const name = setMenu.name_en.toLowerCase();
+  if (name.includes('solo')) return 'solo';
+  if (name.includes('double')) return 'double';
+  // "Set 1" through "Set 4" — extract the number
+  const setMatch = name.match(/set\s*(\d)/);
+  if (setMatch) return `set${setMatch[1]}`;
+  // Fallback: check components array from JSON
+  const id = setMenu.id?.toLowerCase() || '';
+  if (id.includes('solo')) return 'solo';
+  if (id.includes('double')) return 'double';
+  if (id === 'set-1') return 'set1';
+  if (id === 'set-2') return 'set2';
+  if (id === 'set-3') return 'set3';
+  if (id === 'set-4') return 'set4';
+  return 'unknown';
+}
 
 export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
   const t = useTranslations('setMenu');
@@ -31,15 +50,15 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
   const addItem = useCartStore((state) => state.addItem);
 
   const [pizzas, setPizzas] = useState(getPizzas());
-  const [sides, setSides] = useState(getSides());
+  const [allSides, setAllSides] = useState(getSides());
 
   useEffect(() => {
     fetchPizzas().then(setPizzas);
-    fetchSides().then(setSides);
+    fetchSides().then(setAllSides);
   }, []);
 
-  const spaghettis = sides.filter((s) => s.sub_category === 'spaghetti');
-  const nonSpaghettiSides = sides.filter((s) => s.sub_category !== 'spaghetti');
+  const spaghettis = allSides.filter((s) => s.sub_category === 'spaghetti');
+  const nonSpaghettiSides = allSides.filter((s) => s.sub_category !== 'spaghetti');
 
   // State
   const [step, setStep] = useState(0);
@@ -51,36 +70,44 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
   const [selectedSpaghetti, setSelectedSpaghetti] = useState<Side | null>(null);
   const [selectedSide, setSelectedSide] = useState<Side | null>(null);
 
-  // Build steps based on set menu ID
+  const setType = identifySetType(setMenu);
+
+  // Build steps based on set type
   const buildSteps = (): StepConfig[] => {
     const steps: StepConfig[] = [];
-    const id = setMenu.id;
 
-    if (id === 'solo-set') {
-      steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
-      steps.push({ key: 'side', title: t('chooseSide'), type: 'side' });
-    } else if (id === 'set-1') {
-      steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
-      steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
-      steps.push({ key: 'spaghetti', title: t('chooseSpaghetti'), type: 'spaghetti' });
-    } else if (id === 'set-2') {
-      steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
-      steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
-      steps.push({ key: 'side', title: t('chooseSide'), type: 'side' });
-    } else if (id === 'set-3') {
-      steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
-      steps.push({ key: 'leftHalf', title: t('chooseLeftHalf'), type: 'pizza' });
-      steps.push({ key: 'rightHalf', title: t('chooseRightHalf'), type: 'pizza' });
-      steps.push({ key: 'side', title: t('chooseSide'), type: 'side' });
-    } else if (id === 'set-4') {
-      steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
-      steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
-      steps.push({ key: 'spaghetti', title: t('chooseSpaghetti'), type: 'spaghetti' });
-      steps.push({ key: 'side', title: t('chooseSide'), type: 'side' });
-    } else if (id === 'double-set') {
-      steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
-      steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
-      steps.push({ key: 'pizza2', title: t('choosePizza2'), type: 'pizza' });
+    switch (setType) {
+      case 'solo':
+        steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
+        steps.push({ key: 'side', title: t('chooseSide'), type: 'side' });
+        break;
+      case 'set1':
+        steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
+        steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
+        steps.push({ key: 'spaghetti', title: t('chooseSpaghetti'), type: 'spaghetti' });
+        break;
+      case 'set2':
+        steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
+        steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
+        steps.push({ key: 'side', title: t('chooseSide'), type: 'side' });
+        break;
+      case 'set3':
+        steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
+        steps.push({ key: 'leftHalf', title: t('chooseLeftHalf'), type: 'pizza' });
+        steps.push({ key: 'rightHalf', title: t('chooseRightHalf'), type: 'pizza' });
+        steps.push({ key: 'side', title: t('chooseSide'), type: 'side' });
+        break;
+      case 'set4':
+        steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
+        steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
+        steps.push({ key: 'spaghetti', title: t('chooseSpaghetti'), type: 'spaghetti' });
+        steps.push({ key: 'side', title: t('chooseSide'), type: 'side' });
+        break;
+      case 'double':
+        steps.push({ key: 'size', title: t('chooseSize'), type: 'size' });
+        steps.push({ key: 'pizza', title: t('choosePizza'), type: 'pizza' });
+        steps.push({ key: 'pizza2', title: t('choosePizza2'), type: 'pizza' });
+        break;
     }
     return steps;
   };
@@ -92,14 +119,13 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
 
   const price = setMenu.price || (size === 'R' ? (setMenu.price_R || 0) : (setMenu.price_L || 0));
 
-  // Auto-included items text
-  const getIncludedText = () => {
+  // Auto-included items
+  const getIncludedItems = () => {
     const items: string[] = [];
-    const id = setMenu.id;
-    if (id === 'solo-set') {
+    if (setType === 'solo') {
       items.push(`🥤 ${t('coke500')}`);
       items.push(`🥒 ${t('pickle')}`);
-    } else if (['set-1', 'set-2', 'set-3', 'set-4'].includes(id)) {
+    } else if (['set1', 'set2', 'set3', 'set4'].includes(setType)) {
       items.push(`🥤 ${t('coke125')}`);
     }
     return items;
@@ -143,7 +169,7 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
     onClose();
   };
 
-  // Get items for current step
+  // Get items list for current step type
   const getStepItems = (): (Pizza | Side)[] => {
     if (!currentStep) return [];
     if (currentStep.type === 'pizza') return pizzas;
@@ -152,7 +178,7 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
     return [];
   };
 
-  // Get selected item for a step key
+  // Get the currently selected item for a step key
   const getSelectedForKey = (key: string): Pizza | Side | null => {
     switch (key) {
       case 'pizza': return selectedPizza;
@@ -165,6 +191,8 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
     }
   };
 
+  const stepItems = getStepItems();
+
   return (
     <div className="py-2">
       {/* Header */}
@@ -175,13 +203,13 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
           </button>
         )}
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-pizza-dark">{getName(setMenu, locale)}</h3>
+          <h3 className="text-lg font-bold text-pizza-dark">{getItemName(setMenu, locale)}</h3>
           <p className="text-sm text-pizza-red font-bold">{formatPrice(price)}</p>
         </div>
       </div>
 
       {/* Step indicator */}
-      <div className="flex gap-1 mb-4">
+      <div className="flex gap-1 mb-3">
         {Array.from({ length: totalSteps }).map((_, i) => (
           <div
             key={i}
@@ -199,51 +227,52 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
         </p>
       )}
 
-      {/* Size selection step */}
+      {/* === SIZE SELECTION === */}
       {!isConfirmStep && currentStep?.type === 'size' && (
         <div className="space-y-2">
           <button
             onClick={() => { setSize('R'); setStep(step + 1); }}
-            className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-pizza-red text-left transition-colors flex justify-between items-center"
+            className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-pizza-red text-left transition-colors flex justify-between items-center active:scale-[0.98]"
           >
             <div>
               <span className="font-bold text-pizza-dark">Regular (12&quot;)</span>
-              <p className="text-xs text-gray-400 mt-0.5">{getName(setMenu, locale)}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{getItemName(setMenu, locale)}</p>
             </div>
             <span className="text-pizza-red font-bold text-lg">{formatPrice(setMenu.price_R || 0)}</span>
           </button>
           <button
             onClick={() => { setSize('L'); setStep(step + 1); }}
-            className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-pizza-red text-left transition-colors flex justify-between items-center"
+            className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-pizza-red text-left transition-colors flex justify-between items-center active:scale-[0.98]"
           >
             <div>
               <span className="font-bold text-pizza-dark">Large (14&quot;)</span>
-              <p className="text-xs text-gray-400 mt-0.5">{getName(setMenu, locale)}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{getItemName(setMenu, locale)}</p>
             </div>
             <span className="text-pizza-red font-bold text-lg">{formatPrice(setMenu.price_L || 0)}</span>
           </button>
         </div>
       )}
 
-      {/* Item selection steps (pizza/spaghetti/side) — 2-column image grid */}
-      {!isConfirmStep && currentStep?.type !== 'size' && (
+      {/* === ITEM SELECTION (pizza/spaghetti/side) — 2-column image grid === */}
+      {!isConfirmStep && currentStep && currentStep.type !== 'size' && (
         <div className="grid grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pb-2">
-          {getStepItems().map((item) => {
-            const selected = getSelectedForKey(currentStep!.key);
+          {stepItems.map((item) => {
+            const selected = getSelectedForKey(currentStep.key);
             const isSelected = selected?.id === item.id;
             return (
               <button
                 key={item.id}
-                onClick={() => handleSelect(currentStep!.key, item)}
-                className={`relative rounded-xl overflow-hidden border-2 transition-all active:scale-95 ${
+                onClick={() => handleSelect(currentStep.key, item)}
+                className={`relative rounded-xl overflow-hidden border-2 transition-all active:scale-95 text-left ${
                   isSelected ? 'border-pizza-red shadow-md' : 'border-gray-100 hover:border-gray-300'
                 }`}
               >
+                {/* Thumbnail */}
                 <div className="relative w-full aspect-square bg-gradient-to-br from-orange-50 to-orange-100">
                   {(item as Pizza).image_url ? (
                     <Image
                       src={(item as Pizza).image_url!}
-                      alt={getName(item, locale)}
+                      alt={getItemName(item, locale)}
                       fill
                       sizes="(max-width: 430px) 50vw, 200px"
                       className="object-cover"
@@ -252,8 +281,8 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <span className="text-4xl">
-                        {currentStep!.type === 'pizza' ? '🍕' :
-                         currentStep!.type === 'spaghetti' ? '🍝' : '🍗'}
+                        {currentStep.type === 'pizza' ? '🍕' :
+                         currentStep.type === 'spaghetti' ? '🍝' : '🍗'}
                       </span>
                     </div>
                   )}
@@ -275,8 +304,9 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
                     </span>
                   )}
                 </div>
+                {/* Name */}
                 <div className="px-2 py-1.5">
-                  <p className="text-xs font-medium text-pizza-dark truncate">{getName(item, locale)}</p>
+                  <p className="text-xs font-medium text-pizza-dark truncate">{getItemName(item, locale)}</p>
                 </div>
               </button>
             );
@@ -284,35 +314,35 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
         </div>
       )}
 
-      {/* Confirm step */}
+      {/* === CONFIRM STEP === */}
       {isConfirmStep && (
         <div className="space-y-4">
-          <p className="text-sm font-medium text-gray-600 mb-1">{t('yourSet')}</p>
+          <p className="text-sm font-medium text-gray-600">{t('yourSet')}</p>
 
-          {/* Summary cards */}
+          {/* Summary */}
           <div className="space-y-2">
             {selectedPizza && (
-              <SummaryRow emoji="🍕" label={getName(selectedPizza, locale)} imageUrl={selectedPizza.image_url} />
+              <SummaryRow emoji="🍕" label={getItemName(selectedPizza, locale)} imageUrl={selectedPizza.image_url} />
             )}
             {leftHalf && rightHalf && (
               <SummaryRow
                 emoji="🍕"
-                label={`${getName(leftHalf, locale)} + ${getName(rightHalf, locale)}`}
+                label={`${getItemName(leftHalf, locale)} + ${getItemName(rightHalf, locale)}`}
                 imageUrl={leftHalf.image_url}
               />
             )}
             {selectedPizza2 && (
-              <SummaryRow emoji="🍕" label={getName(selectedPizza2, locale)} imageUrl={selectedPizza2.image_url} />
+              <SummaryRow emoji="🍕" label={getItemName(selectedPizza2, locale)} imageUrl={selectedPizza2.image_url} />
             )}
             {selectedSpaghetti && (
-              <SummaryRow emoji="🍝" label={getName(selectedSpaghetti, locale)} />
+              <SummaryRow emoji="🍝" label={getItemName(selectedSpaghetti, locale)} />
             )}
             {selectedSide && (
-              <SummaryRow emoji="🍗" label={getName(selectedSide, locale)} />
+              <SummaryRow emoji="🍗" label={getItemName(selectedSide, locale)} />
             )}
 
-            {/* Auto-included items */}
-            {getIncludedText().map((text, i) => (
+            {/* Auto-included */}
+            {getIncludedItems().map((text, i) => (
               <div key={i} className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg">
                 <span className="text-xs text-green-600 font-medium">{t('includes')}</span>
                 <span className="text-sm text-green-700">{text}</span>
@@ -335,11 +365,20 @@ export const SetMenuSelector = ({ setMenu, onClose }: SetMenuSelectorProps) => {
           </div>
         </div>
       )}
+
+      {/* Included items hint (shown during selection steps) */}
+      {!isConfirmStep && getIncludedItems().length > 0 && (
+        <div className="mt-3 px-3 py-2 bg-green-50 rounded-lg">
+          <span className="text-xs text-green-600">
+            {t('includes')}: {getIncludedItems().join(' + ').replace(/[🥤🥒]\s*/g, '')}
+          </span>
+        </div>
+      )}
     </div>
   );
 };
 
-// Summary row component
+// Summary row for confirm screen
 function SummaryRow({ emoji, label, imageUrl }: { emoji: string; label: string; imageUrl?: string }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg">
