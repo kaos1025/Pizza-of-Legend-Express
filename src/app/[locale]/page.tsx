@@ -2,21 +2,18 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import { useTranslations, useLocale } from 'next-intl';
+// next-intl hooks not directly used here but needed for child components
 import { Header } from '@/components/layout/Header';
 import { CategoryNav } from '@/components/menu/CategoryNav';
 import { MenuCard } from '@/components/menu/MenuCard';
 import { HalfHalfPicker } from '@/components/menu/HalfHalfPicker';
 import { SetMenuSelector } from '@/components/menu/SetMenuSelector';
+import { MenuDetailSheet, type DetailItem } from '@/components/menu/MenuDetailSheet';
 import { CartSummaryBar } from '@/components/cart/CartSummaryBar';
 import { UpsellSheet } from '@/components/menu/UpsellSheet';
-import { useCartStore } from '@/lib/store';
-import { formatPrice } from '@/lib/utils';
 import { getPizzas, getSides, getDrinks, getSauces, getSetMenus, fetchPizzas, fetchSides, fetchDrinks, fetchSauces, fetchSetMenus } from '@/lib/menu-data';
-import type { Locale, Pizza, Side, Drink, Sauce, SetMenu, CartItem } from '@/types/menu';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import type { Pizza, Side, Drink, Sauce, SetMenu } from '@/types/menu';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const HotelParamCapture = () => {
   const searchParams = useSearchParams();
@@ -32,18 +29,12 @@ const HotelParamCapture = () => {
 };
 
 export default function HomePage() {
-  const t = useTranslations();
-  const locale = useLocale() as Locale;
-  const addItem = useCartStore((state) => state.addItem);
-
   const [activeCategory, setActiveCategory] = useState('half_half');
-  const [selectedPizza, setSelectedPizza] = useState<Pizza | null>(null);
+  const [selectedItem, setSelectedItem] = useState<DetailItem | null>(null);
   const [selectedSetMenu, setSelectedSetMenu] = useState<SetMenu | null>(null);
-  const [selectedSize, setSelectedSize] = useState<'R' | 'L'>('R');
-  const [quantity, setQuantity] = useState(1);
   const [showUpsell, setShowUpsell] = useState(false);
 
-  // Menu data — start with sync JSON, then upgrade to Supabase (with image_url)
+  // Menu data — start with sync JSON, then upgrade to Supabase
   const [pizzas, setPizzas] = useState<Pizza[]>(getPizzas());
   const [sides, setSides] = useState<Side[]>(getSides());
   const [drinks, setDrinks] = useState<Drink[]>(getDrinks());
@@ -51,7 +42,6 @@ export default function HomePage() {
   const [setMenus, setSetMenus] = useState<SetMenu[]>(getSetMenus());
 
   useEffect(() => {
-    // Fetch from Supabase to get image_url and latest data
     fetchPizzas().then(setPizzas);
     fetchSides().then(setSides);
     fetchDrinks().then(setDrinks);
@@ -59,46 +49,34 @@ export default function HomePage() {
     fetchSetMenus().then(setSetMenus);
   }, []);
 
+  // Convert any menu item to DetailItem for the shared sheet
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getName = (item: any) => item[`name_${locale}`] || item.name_en;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getDesc = (item: any) => item[`desc_${locale}`] || item.desc_en || '';
+  const toDetailItem = (item: any, type: DetailItem['type']): DetailItem => ({
+    id: item.id,
+    type,
+    name_en: item.name_en,
+    name_zh: item.name_zh || '',
+    name_ja: item.name_ja || '',
+    desc_en: item.desc_en,
+    desc_zh: item.desc_zh,
+    desc_ja: item.desc_ja,
+    description_en: item.description_en,
+    description_zh: item.description_zh,
+    description_ja: item.description_ja,
+    price: item.price,
+    price_R: item.price_R,
+    price_L: item.price_L,
+    image_url: item.image_url,
+    badge: item.badge,
+  });
 
-  const handleAddPizzaToCart = () => {
-    if (!selectedPizza) return;
-    const price = selectedSize === 'R' ? selectedPizza.price_R : selectedPizza.price_L;
-    const item: CartItem = {
-      id: `pizza-${selectedPizza.id}-${selectedSize}-${Date.now()}`,
-      type: 'pizza',
-      name: {
-        en: selectedPizza.name_en,
-        zh: selectedPizza.name_zh,
-        ja: selectedPizza.name_ja,
-      },
-      size: selectedSize,
-      quantity,
-      unitPrice: price,
-    };
-    addItem(item);
-    setSelectedPizza(null);
-    setQuantity(1);
-    setShowUpsell(true);
-  };
+  // Whether the selected item is a pizza (for upsell trigger)
+  const isPizzaType = selectedItem?.type === 'pizza';
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleAddSimpleItem = (item: any, type: 'side' | 'drink' | 'sauce') => {
-    const cartItem: CartItem = {
-      id: `${type}-${item.id}-${Date.now()}`,
-      type,
-      name: {
-        en: item.name_en,
-        zh: item.name_zh,
-        ja: item.name_ja,
-      },
-      quantity: 1,
-      unitPrice: item.price,
-    };
-    addItem(cartItem);
+  const handleItemAdded = () => {
+    if (isPizzaType) {
+      setShowUpsell(true);
+    }
   };
 
   return (
@@ -123,14 +101,13 @@ export default function HomePage() {
             {pizzas.map((pizza) => (
               <MenuCard
                 key={pizza.id}
-                id={pizza.id}
                 name={pizza as unknown as Record<string, string>}
                 description={pizza as unknown as Record<string, string>}
                 priceR={pizza.price_R}
                 priceL={pizza.price_L}
                 badge={pizza.badge}
                 imageUrl={pizza.image_url}
-                onClick={() => setSelectedPizza(pizza)}
+                onClick={() => setSelectedItem(toDetailItem(pizza, 'pizza'))}
               />
             ))}
           </div>
@@ -142,7 +119,6 @@ export default function HomePage() {
             {setMenus.map((setMenu) => (
               <MenuCard
                 key={setMenu.id}
-                id={setMenu.id}
                 name={setMenu as unknown as Record<string, string>}
                 description={setMenu as unknown as Record<string, string>}
                 price={setMenu.price}
@@ -162,11 +138,10 @@ export default function HomePage() {
             {sides.map((side) => (
               <MenuCard
                 key={side.id}
-                id={side.id}
                 name={side as unknown as Record<string, string>}
                 price={side.price}
                 imageUrl={side.image_url}
-                onClick={() => handleAddSimpleItem(side, 'side')}
+                onClick={() => setSelectedItem(toDetailItem(side, 'side'))}
               />
             ))}
           </div>
@@ -178,11 +153,10 @@ export default function HomePage() {
             {drinks.map((drink) => (
               <MenuCard
                 key={drink.id}
-                id={drink.id}
                 name={drink as unknown as Record<string, string>}
                 price={drink.price}
                 imageUrl={drink.image_url}
-                onClick={() => handleAddSimpleItem(drink, 'drink')}
+                onClick={() => setSelectedItem(toDetailItem(drink, 'drink'))}
               />
             ))}
           </div>
@@ -194,103 +168,22 @@ export default function HomePage() {
             {sauces.map((sauce) => (
               <MenuCard
                 key={sauce.id}
-                id={sauce.id}
                 name={sauce as unknown as Record<string, string>}
                 price={sauce.price}
                 imageUrl={sauce.image_url}
-                onClick={() => handleAddSimpleItem(sauce, 'sauce')}
+                onClick={() => setSelectedItem(toDetailItem(sauce, 'sauce'))}
               />
             ))}
           </div>
         )}
       </main>
 
-      {/* Pizza Detail Sheet */}
-      <Sheet open={!!selectedPizza} onOpenChange={(open) => !open && setSelectedPizza(null)}>
-        <SheetContent side="bottom" className="rounded-t-3xl">
-          {selectedPizza && (
-            <div className="py-4">
-              <div className="relative w-full h-48 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
-                {selectedPizza.image_url ? (
-                  <Image
-                    src={selectedPizza.image_url}
-                    alt={getName(selectedPizza)}
-                    fill
-                    sizes="430px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <span className="text-7xl">🍕</span>
-                )}
-              </div>
-              <SheetHeader>
-                <SheetTitle className="text-xl text-pizza-dark">{getName(selectedPizza)}</SheetTitle>
-              </SheetHeader>
-              <p className="text-sm text-gray-500 mt-1">{getDesc(selectedPizza)}</p>
-
-              {/* Size Selection */}
-              <div className="flex gap-2 mt-4">
-                <button
-                  onClick={() => setSelectedSize('R')}
-                  aria-label="Regular 12 inch"
-                  aria-pressed={selectedSize === 'R'}
-                  className={`flex-1 py-3 rounded-xl text-sm font-medium border transition-colors ${
-                    selectedSize === 'R'
-                      ? 'border-pizza-red bg-pizza-red text-white'
-                      : 'border-gray-200 text-pizza-dark hover:border-pizza-red'
-                  }`}
-                >
-                  Regular (12&quot;)
-                  <br />
-                  <span className="font-bold">{formatPrice(selectedPizza.price_R)}</span>
-                </button>
-                <button
-                  onClick={() => setSelectedSize('L')}
-                  aria-label="Large 14 inch"
-                  aria-pressed={selectedSize === 'L'}
-                  className={`flex-1 py-3 rounded-xl text-sm font-medium border transition-colors ${
-                    selectedSize === 'L'
-                      ? 'border-pizza-red bg-pizza-red text-white'
-                      : 'border-gray-200 text-pizza-dark hover:border-pizza-red'
-                  }`}
-                >
-                  Large (14&quot;)
-                  <br />
-                  <span className="font-bold">{formatPrice(selectedPizza.price_L)}</span>
-                </button>
-              </div>
-
-              {/* Quantity */}
-              <div className="flex items-center justify-center gap-4 mt-4">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  aria-label="Decrease quantity"
-                  className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-lg font-bold hover:border-pizza-red"
-                >
-                  −
-                </button>
-                <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  aria-label="Increase quantity"
-                  className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-lg font-bold hover:border-pizza-red"
-                >
-                  +
-                </button>
-              </div>
-
-              <Button
-                onClick={handleAddPizzaToCart}
-                className="w-full mt-4 bg-pizza-red hover:bg-red-700 text-white font-semibold py-3 rounded-xl text-base"
-              >
-                {t('menu.addToCart')} - {formatPrice(
-                  (selectedSize === 'R' ? selectedPizza.price_R : selectedPizza.price_L) * quantity
-                )}
-              </Button>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+      {/* Shared Detail Sheet — for pizza, side, drink, sauce */}
+      <MenuDetailSheet
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onAdded={handleItemAdded}
+      />
 
       {/* Set Menu Selector Sheet */}
       <Sheet open={!!selectedSetMenu} onOpenChange={(open) => !open && setSelectedSetMenu(null)}>
@@ -301,7 +194,7 @@ export default function HomePage() {
         </SheetContent>
       </Sheet>
 
-      {/* Upsell Sheet — shown after adding pizza to cart */}
+      {/* Upsell Sheet — shown after adding pizza/half-half to cart */}
       <UpsellSheet
         isOpen={showUpsell}
         onClose={() => setShowUpsell(false)}
