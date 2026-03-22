@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import imageCompression from 'browser-image-compression';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -71,41 +72,57 @@ export const MenuItemForm = ({ item, isOpen, onClose, onSave, category }: MenuIt
     onClose();
   };
 
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const handleImageUpload = useCallback(async (file: File) => {
     if (!file) return;
+    setUploadError(null);
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      alert('JPG, PNG, WebP 파일만 업로드 가능합니다.');
+      setUploadError('JPG, PNG, WebP 파일만 업로드 가능합니다.');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      alert('파일 크기는 2MB 이하여야 합니다.');
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('파일 크기는 5MB 이하여야 합니다.');
       return;
     }
 
     setUploading(true);
     try {
+      // Client-side compression: max 800px, WebP, quality 80%
+      const compressed = await imageCompression(file, {
+        maxWidthOrHeight: 800,
+        maxSizeMB: 1,
+        fileType: 'image/webp',
+        initialQuality: 0.8,
+        useWebWorker: true,
+      });
+
       const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
+      formDataUpload.append('file', compressed, 'image.webp');
+      if (formData.id) {
+        formDataUpload.append('menu_item_id', formData.id);
+      }
 
       const res = await fetch('/api/admin/menu/upload', {
         method: 'POST',
         body: formDataUpload,
       });
 
+      const result = await res.json();
       if (res.ok) {
-        const { url } = await res.json();
-        handleChange('image_url', url);
+        // Add cache buster to force refresh
+        handleChange('image_url', result.url + '?t=' + Date.now());
       } else {
-        alert('업로드 실패');
+        setUploadError(result.error || '업로드 실패');
       }
     } catch {
-      alert('업로드 중 오류가 발생했습니다.');
+      setUploadError('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setUploading(false);
     }
-  }, []);
+  }, [formData.id]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -181,9 +198,18 @@ export const MenuItemForm = ({ item, isOpen, onClose, onSave, category }: MenuIt
                   <>
                     <Upload className="w-8 h-8 text-gray-300 mb-2" />
                     <span className="text-sm text-gray-400">클릭 또는 드래그하여 업로드</span>
-                    <span className="text-xs text-gray-300 mt-1">JPG, PNG, WebP (최대 2MB)</span>
+                    <span className="text-xs text-gray-300 mt-1">JPG, PNG, WebP (최대 5MB, 자동 압축)</span>
                   </>
                 )}
+              </div>
+            )}
+            {uploadError && (
+              <p className="text-xs text-red-500 mt-1">{uploadError}</p>
+            )}
+            {uploading && formData.image_url && (
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-4 h-4 border-2 border-gray-200 border-t-pizza-red rounded-full animate-spin" />
+                <span className="text-xs text-gray-400">업로드 중...</span>
               </div>
             )}
             <input
