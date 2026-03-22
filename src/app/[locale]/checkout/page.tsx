@@ -64,6 +64,15 @@ export default function CheckoutPage() {
       if (!response.ok) throw new Error('Order failed');
 
       const order = await response.json();
+
+      // Save order to localStorage for "My Orders" access
+      try {
+        const savedOrders = JSON.parse(localStorage.getItem('pol_my_orders') || '[]');
+        savedOrders.unshift({ id: order.id, order_number: order.order_number, created_at: new Date().toISOString() });
+        // Keep last 20 orders
+        localStorage.setItem('pol_my_orders', JSON.stringify(savedOrders.slice(0, 20)));
+      } catch { /* ignore */ }
+
       clearCart();
       router.push(`/${locale}/order/${order.id}`);
     } catch {
