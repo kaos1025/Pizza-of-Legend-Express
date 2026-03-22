@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 import { ClipboardList, UtensilsCrossed, Truck } from 'lucide-react';
 
 const tabs = [
-  { href: '/admin', label: '주문관제', icon: ClipboardList, exact: true },
-  { href: '/admin/menu', label: '메뉴관리', icon: UtensilsCrossed, exact: false },
-  { href: '/admin/delivery', label: '배달관리', icon: Truck, exact: false },
+  { href: '/admin', label: '주문관제', icon: ClipboardList, exact: true, testId: 'admin-orders' },
+  { href: '/admin/menu', label: '메뉴관리', icon: UtensilsCrossed, exact: false, testId: 'admin-menu' },
+  { href: '/admin/delivery', label: '배달관리', icon: Truck, exact: false, testId: 'admin-delivery' },
 ];
 
 export const AdminNav = () => {
@@ -28,6 +28,7 @@ export const AdminNav = () => {
             <Link
               key={tab.href}
               href={tab.href}
+              data-testid={tab.testId}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors ${
                 active
                   ? 'text-white border-b-2 border-pizza-red'

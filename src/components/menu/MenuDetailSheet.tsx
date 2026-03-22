@@ -131,6 +131,7 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
           {hasSizes && (
             <div className="flex gap-2 mt-4">
               <button
+                data-testid="size-R"
                 onClick={() => setSize('R')}
                 aria-pressed={size === 'R'}
                 className={`flex-1 py-3 rounded-xl text-sm font-medium border transition-colors ${
@@ -144,6 +145,7 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
                 <span className="font-bold">{formatPrice(item.price_R!)}</span>
               </button>
               <button
+                data-testid="size-L"
                 onClick={() => setSize('L')}
                 aria-pressed={size === 'L'}
                 className={`flex-1 py-3 rounded-xl text-sm font-medium border transition-colors ${
@@ -167,6 +169,7 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
           {/* Quantity */}
           <div className="flex items-center justify-center gap-4 mt-4">
             <button
+              data-testid="qty-minus"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               aria-label="Decrease quantity"
               className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-lg font-bold hover:border-pizza-red transition-colors"
@@ -175,6 +178,7 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
             </button>
             <span className="text-xl font-bold w-8 text-center">{quantity}</span>
             <button
+              data-testid="qty-plus"
               onClick={() => setQuantity(quantity + 1)}
               aria-label="Increase quantity"
               className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-lg font-bold hover:border-pizza-red transition-colors"
@@ -185,6 +189,7 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
 
           {/* Add to Cart */}
           <Button
+            data-testid="add-to-cart"
             onClick={handleAdd}
             disabled={added}
             className={`w-full mt-4 font-semibold py-3 rounded-xl text-base transition-all ${

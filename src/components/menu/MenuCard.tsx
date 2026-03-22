@@ -31,6 +31,7 @@ const badgeLabels: Record<string, Record<string, string>> = {
 };
 
 export const MenuCard = ({
+  id,
   name,
   description,
   price,
@@ -57,6 +58,7 @@ export const MenuCard = ({
 
   return (
     <div
+      data-testid={id ? `menu-card-${id}` : 'menu-card'}
       onClick={onClick}
       role="button"
       tabIndex={0}

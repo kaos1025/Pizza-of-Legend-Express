@@ -149,6 +149,7 @@ export default function AdminLoginPage() {
             return (
               <button
                 key={i}
+                data-testid="pin-delete"
                 onClick={handleDelete}
                 disabled={loading}
                 className="h-14 rounded-xl bg-gray-800/50 text-gray-400 text-lg font-medium hover:bg-gray-700 active:bg-gray-600 transition-colors disabled:opacity-50"
@@ -160,6 +161,7 @@ export default function AdminLoginPage() {
           return (
             <button
               key={i}
+              data-testid={`pin-${digit}`}
               onClick={() => handleDigit(digit)}
               disabled={loading}
               className="h-14 rounded-xl bg-gray-800/80 text-white text-xl font-medium hover:bg-gray-700 active:bg-gray-600 active:scale-95 transition-all disabled:opacity-50"

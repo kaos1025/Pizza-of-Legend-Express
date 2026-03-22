@@ -61,6 +61,7 @@ export const HotelSelect = ({ value, onChange }: HotelSelectProps) => {
         {t('hotelLabel')}
       </label>
       <select
+        data-testid="hotel-select"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-pizza-dark focus:border-pizza-red focus:ring-2 focus:ring-pizza-red/20 outline-none"

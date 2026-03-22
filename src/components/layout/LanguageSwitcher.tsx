@@ -25,6 +25,7 @@ export const LanguageSwitcher = () => {
       {languages.map((lang) => (
         <button
           key={lang.code}
+          data-testid={`lang-${lang.code}`}
           onClick={() => switchLocale(lang.code)}
           className={`text-sm px-2 py-1 rounded-md transition-colors ${
             locale === lang.code

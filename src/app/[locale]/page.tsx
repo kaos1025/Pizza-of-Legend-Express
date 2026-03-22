@@ -101,6 +101,7 @@ export default function HomePage() {
             {pizzas.map((pizza) => (
               <MenuCard
                 key={pizza.id}
+                id={pizza.id}
                 name={pizza as unknown as Record<string, string>}
                 description={pizza as unknown as Record<string, string>}
                 priceR={pizza.price_R}
@@ -119,6 +120,7 @@ export default function HomePage() {
             {setMenus.map((setMenu) => (
               <MenuCard
                 key={setMenu.id}
+                id={setMenu.id}
                 name={setMenu as unknown as Record<string, string>}
                 description={setMenu as unknown as Record<string, string>}
                 price={setMenu.price}
@@ -138,6 +140,7 @@ export default function HomePage() {
             {sides.map((side) => (
               <MenuCard
                 key={side.id}
+                id={side.id}
                 name={side as unknown as Record<string, string>}
                 price={side.price}
                 imageUrl={side.image_url}
@@ -153,6 +156,7 @@ export default function HomePage() {
             {drinks.map((drink) => (
               <MenuCard
                 key={drink.id}
+                id={drink.id}
                 name={drink as unknown as Record<string, string>}
                 price={drink.price}
                 imageUrl={drink.image_url}
@@ -168,6 +172,7 @@ export default function HomePage() {
             {sauces.map((sauce) => (
               <MenuCard
                 key={sauce.id}
+                id={sauce.id}
                 name={sauce as unknown as Record<string, string>}
                 price={sauce.price}
                 imageUrl={sauce.image_url}

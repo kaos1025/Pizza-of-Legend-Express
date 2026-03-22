@@ -26,6 +26,7 @@ export const CategoryNav = ({ activeCategory, onCategoryChange }: CategoryNavPro
           {categories.map((cat) => (
             <button
               key={cat.key}
+              data-testid={`tab-${cat.key}`}
               onClick={() => onCategoryChange(cat.key)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                 activeCategory === cat.key

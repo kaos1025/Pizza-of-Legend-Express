@@ -88,6 +88,7 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
         <div className="w-52 h-52 rounded-full border-4 border-pizza-red flex overflow-hidden shadow-lg">
           {/* Left half */}
           <button
+            data-testid="half-left"
             onClick={() => setPickingSide('left')}
             className="relative w-1/2 bg-orange-100 flex items-center justify-center border-r-2 border-pizza-red overflow-hidden group hover:brightness-90 transition-all"
           >
@@ -107,6 +108,7 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
 
           {/* Right half */}
           <button
+            data-testid="half-right"
             onClick={() => setPickingSide('right')}
             className="relative w-1/2 bg-orange-50 flex items-center justify-center overflow-hidden group hover:brightness-90 transition-all"
           >
@@ -129,6 +131,7 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
       {/* Selected pizza names */}
       <div className="flex justify-center gap-4 mb-4 text-center">
         <button
+          data-testid="half-left-label"
           onClick={() => setPickingSide('left')}
           className={`flex-1 py-2 px-2 rounded-xl text-sm transition-colors ${
             leftPizza ? 'bg-orange-50 text-pizza-dark font-medium' : 'bg-gray-50 text-gray-400'
@@ -138,6 +141,7 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
           {leftPizza ? getLocaleName(leftPizza) : t('selectPizza')}
         </button>
         <button
+          data-testid="half-right-label"
           onClick={() => setPickingSide('right')}
           className={`flex-1 py-2 px-2 rounded-xl text-sm transition-colors ${
             rightPizza ? 'bg-orange-50 text-pizza-dark font-medium' : 'bg-gray-50 text-gray-400'
@@ -151,6 +155,7 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
       {/* Size selection */}
       <div className="flex gap-2 mb-2">
         <button
+          data-testid="hh-size-R"
           onClick={() => setSize('R')}
           aria-pressed={size === 'R'}
           className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
@@ -162,6 +167,7 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
           Regular (12&quot;) - {formatPrice(config.price_R)}
         </button>
         <button
+          data-testid="hh-size-L"
           onClick={() => setSize('L')}
           aria-pressed={size === 'L'}
           className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
@@ -177,6 +183,7 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
       <p className="text-xs text-gray-400 text-center mb-3">{t('fixedPrice')}</p>
 
       <Button
+        data-testid="hh-add-to-cart"
         onClick={handleAddToCart}
         disabled={!leftPizza || !rightPizza}
         className="w-full bg-pizza-red hover:bg-red-700 text-white font-semibold py-3 rounded-xl disabled:opacity-40"

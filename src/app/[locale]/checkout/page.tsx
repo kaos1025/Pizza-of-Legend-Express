@@ -108,6 +108,7 @@ export default function CheckoutPage() {
               {t('roomLabel')}
             </label>
             <Input
+              data-testid="room-number"
               type="text"
               value={roomNumber}
               onChange={(e) => setRoomNumber(e.target.value.replace(/\D/g, '').slice(0, 4))}
@@ -164,6 +165,7 @@ export default function CheckoutPage() {
             <span className="text-xl font-bold text-pizza-red">{formatPrice(totalAmount)}</span>
           </div>
           <Button
+            data-testid="place-order"
             onClick={handlePlaceOrder}
             disabled={!isValid || isSubmitting}
             className="w-full bg-pizza-red hover:bg-red-700 disabled:bg-gray-300 text-white font-semibold py-3 rounded-xl text-base"

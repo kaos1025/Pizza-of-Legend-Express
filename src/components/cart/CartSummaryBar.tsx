@@ -36,6 +36,7 @@ export const CartSummaryBar = () => {
           </span>
         </div>
         <button
+          data-testid="view-cart"
           onClick={() => router.push(`/${locale}/cart`)}
           className="bg-pizza-red text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-red-700 transition-colors active:scale-95"
           aria-label={`${t('viewCart')} - ${totalItems} items, ${formatPrice(totalAmount)}`}
