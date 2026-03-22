@@ -12,7 +12,10 @@ export const metadata: Metadata = {
   title: 'Pizza of Legend - Authentic Local Pizza',
   description: 'Order authentic local pizza delivered to your hotel room',
   manifest: '/manifest.json',
-  themeColor: '#D4371C',
+  icons: {
+    icon: '/images/logo.jpg',
+    apple: '/images/logo.jpg',
+  },
 };
 
 export default async function LocaleLayout({

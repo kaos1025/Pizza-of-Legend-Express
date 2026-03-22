@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { ClipboardList } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -31,7 +32,14 @@ export const Header = () => {
     <header className="sticky top-0 z-50 bg-pizza-dark text-white px-4 py-3 shadow-md">
       <div className="max-w-[430px] mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🍕</span>
+          <Image
+            src="/images/logo.jpg"
+            alt="Pizza of Legend"
+            width={40}
+            height={40}
+            className="rounded-lg object-contain"
+            priority
+          />
           <div>
             <h1 className="text-lg font-bold leading-tight">{t('name')}</h1>
             <p className="text-xs text-gray-300">{t('tagline')}</p>
