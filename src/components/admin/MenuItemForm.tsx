@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Upload, X } from 'lucide-react';
 import type { MenuItem } from '@/lib/admin/menu';
 
 interface MenuItemFormProps {
@@ -15,11 +15,22 @@ interface MenuItemFormProps {
   category: string;
 }
 
-const categoryHasSize = (cat: string) => ['pizza', 'set_menu'].includes(cat);
+const categoryHasSize = (cat: string) => ['pizza', 'set_menu', 'half_half'].includes(cat);
+
+const descTabs = [
+  { key: 'description_ko', label: 'KO' },
+  { key: 'description_en', label: 'EN' },
+  { key: 'description_zh', label: 'ZH' },
+  { key: 'description_ja', label: 'JA' },
+] as const;
 
 export const MenuItemForm = ({ item, isOpen, onClose, onSave, category }: MenuItemFormProps) => {
   const isEdit = !!item;
   const [formData, setFormData] = useState<Partial<MenuItem>>({});
+  const [activeDescTab, setActiveDescTab] = useState('description_ko');
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (item) {
@@ -32,15 +43,16 @@ export const MenuItemForm = ({ item, isOpen, onClose, onSave, category }: MenuIt
         name_en: '',
         name_zh: '',
         name_ja: '',
+        description_ko: '',
         description_en: '',
         description_zh: '',
         description_ja: '',
-        description_ko: '',
         price: undefined,
         price_R: undefined,
         price_L: undefined,
         badge: null,
         is_half_half_available: false,
+        image_url: '',
       });
     }
   }, [item, category]);
@@ -59,19 +71,136 @@ export const MenuItemForm = ({ item, isOpen, onClose, onSave, category }: MenuIt
     onClose();
   };
 
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('JPG, PNG, WebP 파일만 업로드 가능합니다.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert('파일 크기는 2MB 이하여야 합니다.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+
+      const res = await fetch('/api/admin/menu/upload', {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      if (res.ok) {
+        const { url } = await res.json();
+        handleChange('image_url', url);
+      } else {
+        alert('업로드 실패');
+      }
+    } catch {
+      alert('업로드 중 오류가 발생했습니다.');
+    } finally {
+      setUploading(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleImageUpload(file);
+  }, [handleImageUpload]);
+
   const hasSize = categoryHasSize(category);
 
-  return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full sm:w-[480px] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{isEdit ? '메뉴 수정' : '메뉴 추가'}</SheetTitle>
-        </SheetHeader>
+  if (!isOpen) return null;
 
-        <div className="space-y-4 py-4">
-          {/* Names */}
-          <div className="space-y-2">
-            <h3 className="font-medium text-sm text-gray-700">메뉴명</h3>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-pizza-dark">
+            {isEdit ? '메뉴 수정' : '메뉴 추가'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body — scrollable */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+          {/* Image Upload */}
+          <div>
+            <h3 className="font-medium text-sm text-gray-700 mb-2">이미지</h3>
+            {formData.image_url ? (
+              <div className="relative w-full h-40 rounded-xl overflow-hidden bg-gray-100 group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={formData.image_url}
+                  alt="메뉴 이미지"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="opacity-0 group-hover:opacity-100 bg-white text-pizza-dark text-sm font-medium px-4 py-2 rounded-lg transition-opacity"
+                  >
+                    변경
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                className={`w-full h-40 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                  dragOver
+                    ? 'border-pizza-red bg-red-50'
+                    : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                }`}
+              >
+                {uploading ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 border-3 border-gray-200 border-t-pizza-red rounded-full animate-spin" />
+                    <span className="text-sm text-gray-400">업로드 중...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-gray-300 mb-2" />
+                    <span className="text-sm text-gray-400">클릭 또는 드래그하여 업로드</span>
+                    <span className="text-xs text-gray-300 mt-1">JPG, PNG, WebP (최대 2MB)</span>
+                  </>
+                )}
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(file);
+              }}
+            />
+          </div>
+
+          {/* Names — 2x2 grid */}
+          <div>
+            <h3 className="font-medium text-sm text-gray-700 mb-2">메뉴명</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-xs text-gray-500">한국어</label>
@@ -108,41 +237,40 @@ export const MenuItemForm = ({ item, isOpen, onClose, onSave, category }: MenuIt
             </div>
           </div>
 
-          {/* Descriptions */}
-          <div className="space-y-2">
-            <h3 className="font-medium text-sm text-gray-700">설명</h3>
-            <div>
-              <label className="text-xs text-gray-500">English</label>
-              <Textarea
-                value={formData.description_en || ''}
-                onChange={(e) => handleChange('description_en', e.target.value)}
-                placeholder="English description"
-                rows={2}
-              />
+          {/* Descriptions — tab-based */}
+          <div>
+            <h3 className="font-medium text-sm text-gray-700 mb-2">설명</h3>
+            <div className="flex gap-1 mb-2">
+              {descTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveDescTab(tab.key)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    activeDescTab === tab.key
+                      ? 'bg-pizza-dark text-white'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-            <div>
-              <label className="text-xs text-gray-500">中文</label>
-              <Textarea
-                value={formData.description_zh || ''}
-                onChange={(e) => handleChange('description_zh', e.target.value)}
-                placeholder="中文描述"
-                rows={2}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500">日本語</label>
-              <Textarea
-                value={formData.description_ja || ''}
-                onChange={(e) => handleChange('description_ja', e.target.value)}
-                placeholder="日本語の説明"
-                rows={2}
-              />
-            </div>
+            {descTabs.map((tab) => (
+              <div key={tab.key} className={activeDescTab === tab.key ? 'block' : 'hidden'}>
+                <Textarea
+                  value={(formData[tab.key as keyof typeof formData] as string) || ''}
+                  onChange={(e) => handleChange(tab.key, e.target.value)}
+                  placeholder={`${tab.label} 설명 입력`}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+            ))}
           </div>
 
           {/* Pricing */}
-          <div className="space-y-2">
-            <h3 className="font-medium text-sm text-gray-700">가격 (₩)</h3>
+          <div>
+            <h3 className="font-medium text-sm text-gray-700 mb-2">가격 (₩)</h3>
             {hasSize ? (
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -174,14 +302,14 @@ export const MenuItemForm = ({ item, isOpen, onClose, onSave, category }: MenuIt
             )}
           </div>
 
-          {/* Options */}
-          <div className="space-y-2">
-            <h3 className="font-medium text-sm text-gray-700">옵션</h3>
-            <div className="flex gap-3">
+          {/* Options — single row */}
+          <div>
+            <h3 className="font-medium text-sm text-gray-700 mb-2">옵션</h3>
+            <div className="flex items-center gap-3">
               <select
                 value={formData.badge || ''}
                 onChange={(e) => handleChange('badge', e.target.value || null)}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-2"
+                className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"
               >
                 <option value="">뱃지 없음</option>
                 <option value="popular">인기</option>
@@ -191,49 +319,37 @@ export const MenuItemForm = ({ item, isOpen, onClose, onSave, category }: MenuIt
               </select>
 
               {category === 'pizza' && (
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.is_half_half_available || false}
                     onChange={(e) => handleChange('is_half_half_available', e.target.checked)}
-                    className="rounded"
+                    className="rounded border-gray-300"
                   />
                   반반 가능
                 </label>
               )}
             </div>
-
-            {/* sub_category removed — not in DB schema */}
-          </div>
-
-          {/* Image URL */}
-          <div>
-            <h3 className="font-medium text-sm text-gray-700 mb-1">이미지 URL</h3>
-            <Input
-              value={formData.image_url || ''}
-              onChange={(e) => handleChange('image_url', e.target.value)}
-              placeholder="이미지 URL (추후 업로드 기능 추가)"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2 pt-4">
-            <Button
-              onClick={handleSubmit}
-              className="flex-1 bg-pizza-red hover:bg-red-700 text-white"
-            >
-              {isEdit ? '수정 완료' : '메뉴 추가'}
-            </Button>
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="flex-1"
-            >
-              취소
-            </Button>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+
+        {/* Footer — fixed at bottom */}
+        <div className="flex gap-2 px-6 py-4 border-t border-gray-100 bg-white rounded-b-2xl">
+          <Button
+            onClick={handleSubmit}
+            className="flex-1 bg-pizza-red hover:bg-red-700 text-white font-semibold"
+          >
+            {isEdit ? '수정 완료' : '메뉴 추가'}
+          </Button>
+          <Button
+            onClick={onClose}
+            variant="outline"
+            className="flex-1"
+          >
+            취소
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
