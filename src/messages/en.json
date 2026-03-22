@@ -88,6 +88,13 @@
     "estimatedTime": "Estimated delivery: 30-45 min",
     "backToMenu": "Back to Menu"
   },
+  "upsell": {
+    "added": "Added!",
+    "title": "Goes well with...",
+    "addItem": "Add",
+    "browseSides": "Browse More Sides",
+    "goToCart": "Go to Cart"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Something went wrong",

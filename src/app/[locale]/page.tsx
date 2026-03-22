@@ -9,6 +9,7 @@ import { MenuCard } from '@/components/menu/MenuCard';
 import { HalfHalfPicker } from '@/components/menu/HalfHalfPicker';
 import { SetMenuSelector } from '@/components/menu/SetMenuSelector';
 import { CartSummaryBar } from '@/components/cart/CartSummaryBar';
+import { UpsellSheet } from '@/components/menu/UpsellSheet';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/utils';
 import { getPizzas, getSides, getDrinks, getSauces, getSetMenus } from '@/lib/menu-data';
@@ -39,6 +40,7 @@ export default function HomePage() {
   const [selectedSetMenu, setSelectedSetMenu] = useState<SetMenu | null>(null);
   const [selectedSize, setSelectedSize] = useState<'R' | 'L'>('R');
   const [quantity, setQuantity] = useState(1);
+  const [showUpsell, setShowUpsell] = useState(false);
 
   const pizzas = getPizzas();
   const sides = getSides();
@@ -69,6 +71,7 @@ export default function HomePage() {
     addItem(item);
     setSelectedPizza(null);
     setQuantity(1);
+    setShowUpsell(true);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -271,6 +274,13 @@ export default function HomePage() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Upsell Sheet — shown after adding pizza to cart */}
+      <UpsellSheet
+        isOpen={showUpsell}
+        onClose={() => setShowUpsell(false)}
+        onBrowseSides={() => setActiveCategory('side')}
+      />
 
       <CartSummaryBar />
     </div>

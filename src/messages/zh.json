@@ -88,6 +88,13 @@
     "estimatedTime": "预计送达时间：30-45 分钟",
     "backToMenu": "返回菜单"
   },
+  "upsell": {
+    "added": "已添加！",
+    "title": "搭配推荐...",
+    "addItem": "添加",
+    "browseSides": "查看更多小食",
+    "goToCart": "去购物车"
+  },
   "common": {
     "loading": "加载中...",
     "error": "出了点问题",

@@ -88,6 +88,13 @@
     "estimatedTime": "お届け目安：30〜45分",
     "backToMenu": "メニューに戻る"
   },
+  "upsell": {
+    "added": "追加しました！",
+    "title": "一緒にいかが？",
+    "addItem": "追加",
+    "browseSides": "サイドメニューを見る",
+    "goToCart": "カートへ"
+  },
   "common": {
     "loading": "読み込み中...",
     "error": "エラーが発生しました",
