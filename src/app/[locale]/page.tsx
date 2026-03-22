@@ -113,7 +113,7 @@ export default function HomePage() {
         {/* Half & Half Section */}
         {activeCategory === 'half_half' && (
           <div className="space-y-4">
-            <HalfHalfPicker />
+            <HalfHalfPicker onAddedToCart={() => setShowUpsell(true)} />
           </div>
         )}
 

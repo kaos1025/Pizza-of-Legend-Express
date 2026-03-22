@@ -1,16 +1,18 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Check, ShoppingCart, ChevronRight } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/utils';
-import { getSides, getDrinks, getSauces } from '@/lib/menu-data';
+import { getSides, getDrinks, getSauces, fetchSides, fetchDrinks, fetchSauces } from '@/lib/menu-data';
 import type { Locale, CartItem } from '@/types/menu';
 
-// Recommended item IDs (from 02_menu_data.json)
-const RECOMMENDED_IDS = ['buffalo-wings-5', 'coke-500', 'garlic-sauce'];
+// Recommended item IDs — fallback names for JSON mode
+const RECOMMENDED_IDS = ['buffalo-wings-5', 'coke-500', 'garlic-sauce', 'carbonara'];
 
 interface UpsellSheetProps {
   isOpen: boolean;
@@ -24,10 +26,18 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 
-  const sides = getSides();
-  const drinks = getDrinks();
-  const sauces = getSauces();
-  const allItems = [...sides, ...drinks, ...sauces];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [allItems, setAllItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Start with sync JSON, upgrade to Supabase
+    const syncItems = [...getSides(), ...getDrinks(), ...getSauces()];
+    setAllItems(syncItems);
+
+    Promise.all([fetchSides(), fetchDrinks(), fetchSauces()]).then(([s, d, sc]) => {
+      setAllItems([...s, ...d, ...sc]);
+    });
+  }, []);
 
   const recommended = RECOMMENDED_IDS
     .map((id) => allItems.find((item) => item.id === id))
@@ -38,8 +48,8 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getType = (item: any): 'side' | 'drink' | 'sauce' => {
-    if (drinks.some((d) => d.id === item.id)) return 'drink';
-    if (sauces.some((s) => s.id === item.id)) return 'sauce';
+    if (item.id?.includes('coke') || item.id?.includes('sprite')) return 'drink';
+    if (item.id?.includes('sauce') || item.id?.includes('parmesan') || item.id?.includes('jalapeno') || item.id?.includes('pickle') || item.id?.includes('hot-sauce')) return 'sauce';
     return 'side';
   };
 
@@ -50,6 +60,9 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
     if (type === 'sauce') return '🧄';
     return '🍗';
   };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAddItem = (item: any) => {
@@ -66,7 +79,13 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
       unitPrice: item.price,
     };
     addItem(cartItem);
+    setAddedIds((prev) => new Set(prev).add(item.id));
   };
+
+  // Reset added state when sheet closes
+  useEffect(() => {
+    if (!isOpen) setAddedIds(new Set());
+  }, [isOpen]);
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -85,26 +104,45 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
 
           {/* Recommended items horizontal scroll */}
           <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 scrollbar-hide">
-            {recommended.map((item) => (
-              <div
-                key={item!.id}
-                className="flex-shrink-0 w-36 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
-              >
-                <div className="h-24 bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
-                  <span className="text-4xl">{getEmoji(item)}</span>
+            {recommended.map((item) => {
+              const isAdded = addedIds.has(item!.id);
+              return (
+                <div
+                  key={item!.id}
+                  className="flex-shrink-0 w-36 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
+                >
+                  <div className="relative h-24 bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center overflow-hidden">
+                    {item!.image_url ? (
+                      <Image
+                        src={item!.image_url}
+                        alt={getName(item)}
+                        fill
+                        sizes="144px"
+                        className="object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-4xl">{getEmoji(item)}</span>
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-xs font-medium text-pizza-dark truncate">{getName(item)}</p>
+                    <p className="text-sm font-bold text-pizza-red mt-0.5">{formatPrice(item!.price)}</p>
+                    <button
+                      onClick={() => handleAddItem(item)}
+                      disabled={isAdded}
+                      className={`w-full mt-2 text-xs font-semibold py-1.5 rounded-lg transition-all active:scale-95 ${
+                        isAdded
+                          ? 'bg-success-green text-white'
+                          : 'bg-pizza-red text-white hover:bg-red-700'
+                      }`}
+                    >
+                      {isAdded ? '✓ Added' : `+ ${t('addItem')}`}
+                    </button>
+                  </div>
                 </div>
-                <div className="p-2.5">
-                  <p className="text-xs font-medium text-pizza-dark truncate">{getName(item)}</p>
-                  <p className="text-sm font-bold text-pizza-red mt-0.5">{formatPrice(item!.price)}</p>
-                  <button
-                    onClick={() => handleAddItem(item)}
-                    className="w-full mt-2 bg-pizza-red text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-700 active:scale-95 transition-all"
-                  >
-                    + {t('addItem')}
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Action buttons */}

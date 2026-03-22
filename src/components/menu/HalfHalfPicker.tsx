@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
-import { Check, X } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { formatPrice } from '@/lib/utils';
@@ -13,7 +13,11 @@ import type { Locale, Pizza, CartItem } from '@/types/menu';
 
 type PickingSide = 'left' | 'right' | null;
 
-export const HalfHalfPicker = () => {
+interface HalfHalfPickerProps {
+  onAddedToCart?: () => void;
+}
+
+export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
   const t = useTranslations('halfHalf');
   const locale = useLocale() as Locale;
   const addItem = useCartStore((state) => state.addItem);
@@ -67,6 +71,7 @@ export const HalfHalfPicker = () => {
     addItem(item);
     setLeftPizzaId('');
     setRightPizzaId('');
+    onAddedToCart?.();
   };
 
   const availablePizzas = pizzas.filter((p) => p.half_half);
@@ -183,16 +188,10 @@ export const HalfHalfPicker = () => {
         <SheetContent side="bottom" className="rounded-t-3xl max-h-[75vh]">
           <div className="py-3">
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-3">
               <h3 className="text-lg font-bold text-pizza-dark">
                 {pickingSide === 'left' ? t('leftHalf') : t('rightHalf')}
               </h3>
-              <button
-                onClick={() => setPickingSide(null)}
-                className="p-1 rounded-lg hover:bg-gray-100 text-gray-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
 
             {/* Pizza Grid */}
