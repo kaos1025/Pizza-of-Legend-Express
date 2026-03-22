@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRealtimeOrders } from '@/hooks/useRealtimeOrders';
 import { HotelDeliveryGroup } from './HotelDeliveryGroup';
 import { DailySettlementTable } from './DailySettlementTable';
@@ -11,6 +11,25 @@ export const DeliveryDashboard = () => {
   const { orders, updateOrder } = useRealtimeOrders({
     initialOrders: [],
   });
+
+  const [hotelMap, setHotelMap] = useState<Record<string, { name: string; note: string }>>({});
+  const [hotelNameMap, setHotelNameMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetch('/api/hotels')
+      .then((res) => res.json())
+      .then((data) => {
+        const map: Record<string, { name: string; note: string }> = {};
+        const nameMap: Record<string, string> = {};
+        (data.hotels || []).forEach((h: { id: string; name_en: string; delivery_note?: string }) => {
+          map[h.id] = { name: h.name_en, note: h.delivery_note || '' };
+          nameMap[h.id] = h.name_en;
+        });
+        setHotelMap(map);
+        setHotelNameMap(nameMap);
+      })
+      .catch(() => {});
+  }, []);
 
   const deliveringOrders = orders.filter((o) => o.status === 'delivering');
 
@@ -53,6 +72,7 @@ export const DeliveryDashboard = () => {
               hotelId={hotelId}
               orders={hotelOrders}
               onComplete={handleComplete}
+              hotelMap={hotelMap}
             />
           ))}
         </div>
@@ -64,7 +84,7 @@ export const DeliveryDashboard = () => {
       )}
 
       {/* Daily settlement */}
-      <DailySettlementTable orders={orders} />
+      <DailySettlementTable orders={orders} hotelMap={hotelNameMap} />
     </div>
   );
 };

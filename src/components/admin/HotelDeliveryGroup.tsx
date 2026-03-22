@@ -1,21 +1,16 @@
 'use client';
 
 import { DeliveryOrderCard } from './DeliveryOrderCard';
-import { getHotels } from '@/lib/menu-data';
 import type { Order } from '@/types/order';
-
-const hotelMap: Record<string, { name: string; note: string }> = {};
-getHotels().forEach((h) => {
-  hotelMap[h.id] = { name: h.name_en, note: h.delivery_note };
-});
 
 interface HotelDeliveryGroupProps {
   hotelId: string;
   orders: Order[];
   onComplete: (orderId: string, paymentMethod: 'cash' | 'card') => void;
+  hotelMap?: Record<string, { name: string; note: string }>;
 }
 
-export const HotelDeliveryGroup = ({ hotelId, orders, onComplete }: HotelDeliveryGroupProps) => {
+export const HotelDeliveryGroup = ({ hotelId, orders, onComplete, hotelMap = {} }: HotelDeliveryGroupProps) => {
   const hotel = hotelMap[hotelId] || { name: hotelId, note: '' };
 
   return (

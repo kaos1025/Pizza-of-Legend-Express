@@ -1,17 +1,14 @@
 'use client';
 
 import { formatPrice } from '@/lib/utils';
-import { getHotels } from '@/lib/menu-data';
 import type { Order } from '@/types/order';
 
-const hotelMap: Record<string, string> = {};
-getHotels().forEach((h) => { hotelMap[h.id] = h.name_en; });
-
 interface DailySettlementTableProps {
+  hotelMap?: Record<string, string>;
   orders: Order[];
 }
 
-export const DailySettlementTable = ({ orders }: DailySettlementTableProps) => {
+export const DailySettlementTable = ({ orders, hotelMap = {} }: DailySettlementTableProps) => {
   const completedOrders = orders
     .filter((o) => o.status === 'completed')
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());

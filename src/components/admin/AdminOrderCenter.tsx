@@ -3,24 +3,34 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRealtimeOrders } from '@/hooks/useRealtimeOrders';
 import { requestNotificationPermission, notifyNewOrder, getNotificationPermission } from '@/lib/admin/notifications';
-import { getHotels } from '@/lib/menu-data';
 import { OrderCard } from './OrderCard';
 import { OrderFilterBar } from './OrderFilterBar';
 import { SettlementSummary } from './SettlementSummary';
 import type { Order } from '@/types/order';
 import { Bell, Wifi, WifiOff } from 'lucide-react';
 
-const hotelMap: Record<string, string> = {};
-getHotels().forEach((h) => { hotelMap[h.id] = h.name_en; });
-
 export const AdminOrderCenter = () => {
   const [filter, setFilter] = useState('all');
   const [notifPermission, setNotifPermission] = useState<string>('default');
+  const [hotelMap, setHotelMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetch('/api/hotels')
+      .then((res) => res.json())
+      .then((data) => {
+        const map: Record<string, string> = {};
+        (data.hotels || []).forEach((h: { id: string; name_en: string }) => {
+          map[h.id] = h.name_en;
+        });
+        setHotelMap(map);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleNewOrder = useCallback((order: Order) => {
     const hotelName = hotelMap[order.hotel_id] || order.hotel_id;
     notifyNewOrder(order.order_number, hotelName, order.room_number);
-  }, []);
+  }, [hotelMap]);
 
   const { orders, isConnected, updateOrder } = useRealtimeOrders({
     initialOrders: [],
@@ -95,7 +105,7 @@ export const AdminOrderCenter = () => {
           <h2 className="font-bold text-base mb-2">신규 주문 ({pendingOrders.length})</h2>
           <div className="space-y-3">
             {pendingOrders.map((order) => (
-              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} />
+              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} hotelMap={hotelMap} />
             ))}
           </div>
         </section>
@@ -106,7 +116,7 @@ export const AdminOrderCenter = () => {
           <h2 className="font-bold text-base mb-2">진행중 ({activeOrders.length})</h2>
           <div className="space-y-3">
             {activeOrders.map((order) => (
-              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} />
+              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} hotelMap={hotelMap} />
             ))}
           </div>
         </section>
@@ -117,7 +127,7 @@ export const AdminOrderCenter = () => {
           <h2 className="font-bold text-base mb-2">처리 완료 ({doneOrders.length})</h2>
           <div className="space-y-3">
             {doneOrders.map((order) => (
-              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} />
+              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} hotelMap={hotelMap} />
             ))}
           </div>
         </section>

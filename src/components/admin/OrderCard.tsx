@@ -3,18 +3,13 @@
 import { useState } from 'react';
 import { StatusBadge } from './StatusBadge';
 import { formatPrice } from '@/lib/utils';
-import { getHotels } from '@/lib/menu-data';
 import type { Order, OrderStatus } from '@/types/order';
 
 interface OrderCardProps {
   order: Order;
   onStatusChanged: (updatedOrder: Order) => void;
+  hotelMap?: Record<string, string>;
 }
-
-const hotelMap: Record<string, string> = {};
-// Build hotel name map
-const hotels = getHotels();
-hotels.forEach((h) => { hotelMap[h.id] = h.name_en; });
 
 const statusActions: Record<OrderStatus, { label: string; next: OrderStatus; variant: string }[]> = {
   pending: [
@@ -43,7 +38,7 @@ function getElapsedTime(dateStr: string): string {
   return `${hours}시간 ${minutes % 60}분 전`;
 }
 
-export const OrderCard = ({ order, onStatusChanged }: OrderCardProps) => {
+export const OrderCard = ({ order, onStatusChanged, hotelMap = {} }: OrderCardProps) => {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   const actions = statusActions[order.status] || [];
