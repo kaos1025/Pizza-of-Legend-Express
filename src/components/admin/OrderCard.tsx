@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { StatusBadge } from './StatusBadge';
 import { formatPrice } from '@/lib/utils';
+import { notifyDeliveryCompleted } from '@/lib/admin/notifications';
 import type { Order, OrderStatus } from '@/types/order';
 
 interface OrderCardProps {
   order: Order;
   onStatusChanged: (updatedOrder: Order) => void;
   hotelMap?: Record<string, string>;
+  hotelKoMap?: Record<string, string>;
 }
 
 const statusActions: Record<OrderStatus, { label: string; next: OrderStatus; variant: string }[]> = {
@@ -38,7 +40,7 @@ function getElapsedTime(dateStr: string): string {
   return `${hours}시간 ${minutes % 60}분 전`;
 }
 
-export const OrderCard = ({ order, onStatusChanged, hotelMap = {} }: OrderCardProps) => {
+export const OrderCard = ({ order, onStatusChanged, hotelMap = {}, hotelKoMap = {} }: OrderCardProps) => {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   const actions = statusActions[order.status] || [];
@@ -56,6 +58,12 @@ export const OrderCard = ({ order, onStatusChanged, hotelMap = {} }: OrderCardPr
       if (res.ok) {
         const { order: updated } = await res.json();
         onStatusChanged(updated);
+
+        // TTS for delivery completion
+        if (nextStatus === 'completed' && paymentMethod) {
+          const hotelNameKo = hotelKoMap[order.hotel_id] || hotelMap[order.hotel_id] || order.hotel_id;
+          notifyDeliveryCompleted(hotelNameKo, order.room_number, paymentMethod);
+        }
       }
     } catch {
       // Silently fail — will be updated on next poll
