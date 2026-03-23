@@ -90,7 +90,7 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="bottom" className="rounded-t-3xl">
+      <SheetContent side="bottom" className="rounded-t-3xl" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}>
         <div className="py-4">
           {/* Added confirmation */}
           <div className="flex items-center justify-center gap-2 mb-4">

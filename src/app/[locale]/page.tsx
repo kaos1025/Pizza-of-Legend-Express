@@ -192,7 +192,7 @@ export default function HomePage() {
 
       {/* Set Menu Selector Sheet */}
       <Sheet open={!!selectedSetMenu} onOpenChange={(open) => !open && setSelectedSetMenu(null)}>
-        <SheetContent side="bottom" className="rounded-t-3xl max-h-[80vh] overflow-y-auto">
+        <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}>
           {selectedSetMenu && (
             <SetMenuSelector setMenu={selectedSetMenu} onClose={() => setSelectedSetMenu(null)} />
           )}

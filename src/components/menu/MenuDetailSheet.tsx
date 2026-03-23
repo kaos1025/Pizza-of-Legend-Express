@@ -172,8 +172,8 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
           </div>
         </div>
 
-        {/* Fixed bottom Add to Cart — always visible */}
-        <div className="px-4 pb-5 pt-3 border-t border-gray-100 bg-white">
+        {/* Fixed bottom Add to Cart — always visible with safe area */}
+        <div className="px-4 pt-3 border-t border-gray-100 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.05)]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 20px), 20px)' }}>
           <button
             data-testid="add-to-cart"
             onClick={handleAdd}

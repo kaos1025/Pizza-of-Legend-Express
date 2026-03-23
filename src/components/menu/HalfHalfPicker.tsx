@@ -193,7 +193,7 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
 
       {/* Pizza Selection Bottom Sheet */}
       <Sheet open={pickingSide !== null} onOpenChange={(open) => { if (!open) setPickingSide(null); }}>
-        <SheetContent side="bottom" className="rounded-t-3xl max-h-[75vh]">
+        <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}>
           <div className="py-3">
             {/* Header */}
             <div className="mb-3">

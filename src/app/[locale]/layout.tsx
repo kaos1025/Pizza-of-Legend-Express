@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     icon: '/images/logo.jpg',
     apple: '/images/logo.jpg',
   },
+  other: {
+    'viewport': 'width=device-width, initial-scale=1, viewport-fit=cover',
+  },
 };
 
 export default async function LocaleLayout({
