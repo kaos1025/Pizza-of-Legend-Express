@@ -94,7 +94,10 @@
     "orderDetails": "订单详情",
     "thankYou": "感谢您的订购！",
     "estimatedTime": "预计送达时间：30-45 分钟",
-    "backToMenu": "返回菜单"
+    "backToMenu": "返回菜单",
+    "enableNotifications": "订单状态更新时通知您",
+    "enableNotificationsButton": "开启通知",
+    "notificationsEnabled": "通知已开启"
   },
   "upsell": {
     "added": "已添加！",

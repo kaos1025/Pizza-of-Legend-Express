@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
+import { showOrderStatusNotification } from '@/lib/order-notifications';
 import type { OrderStatus } from '@/types/order';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -11,6 +12,7 @@ interface OrderTrackingData {
   status: OrderStatus;
   total_amount: number;
   created_at: string;
+  language?: string;
   items: Array<{
     name: Record<string, string>;
     size?: string;
@@ -22,14 +24,28 @@ interface OrderTrackingData {
 
 interface UseOrderTrackingOptions {
   orderId: string;
+  locale: string;
 }
 
-export function useOrderTracking({ orderId }: UseOrderTrackingOptions) {
+export function useOrderTracking({ orderId, locale }: UseOrderTrackingOptions) {
   const [order, setOrder] = useState<OrderTrackingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const retryCountRef = useRef(0);
+  const prevStatusRef = useRef<OrderStatus | null>(null);
+
+  const handleStatusChange = useCallback((newStatus: OrderStatus, orderData: OrderTrackingData | null) => {
+    const prevStatus = prevStatusRef.current;
+    prevStatusRef.current = newStatus;
+
+    // Only notify on actual transitions (not initial load)
+    if (prevStatus && prevStatus !== newStatus) {
+      const lang = orderData?.language || locale;
+      const orderNumber = orderData?.order_number || '';
+      showOrderStatusNotification(newStatus, orderNumber, lang);
+    }
+  }, [locale]);
 
   useEffect(() => {
     if (!orderId) return;
@@ -44,6 +60,12 @@ export function useOrderTracking({ orderId }: UseOrderTrackingOptions) {
           const data = await res.json();
           if (!cancelled) {
             setOrder(data);
+            // Set initial status without triggering notification
+            if (prevStatusRef.current === null) {
+              prevStatusRef.current = data.status;
+            } else if (prevStatusRef.current !== data.status) {
+              handleStatusChange(data.status, data);
+            }
             retryCountRef.current = 0;
           }
         } else if (res.status === 404 && retryCountRef.current < 3) {
@@ -79,12 +101,12 @@ export function useOrderTracking({ orderId }: UseOrderTrackingOptions) {
             },
             (payload) => {
               const newData = payload.new as Record<string, unknown>;
+              const newStatus = newData.status as OrderStatus;
               setOrder((prev) => {
                 if (!prev) return prev;
-                return {
-                  ...prev,
-                  status: newData.status as OrderStatus,
-                };
+                const updated = { ...prev, status: newStatus };
+                handleStatusChange(newStatus, updated);
+                return updated;
               });
             }
           )
@@ -107,7 +129,7 @@ export function useOrderTracking({ orderId }: UseOrderTrackingOptions) {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [orderId]);
+  }, [orderId, handleStatusChange]);
 
   return { order, loading, isConnected };
 }

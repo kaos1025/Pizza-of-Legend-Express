@@ -57,6 +57,7 @@ export default function CheckoutPage() {
           messenger_id: messengerId || undefined,
           special_requests: specialRequests || undefined,
           total_amount: totalAmount,
+          language: locale,
           _hp: honeypot,
         }),
       });

@@ -94,7 +94,10 @@
     "orderDetails": "Order Details",
     "thankYou": "Thank you for your order!",
     "estimatedTime": "Estimated delivery: 30-45 min",
-    "backToMenu": "Back to Menu"
+    "backToMenu": "Back to Menu",
+    "enableNotifications": "Get notified when your order status changes",
+    "enableNotificationsButton": "Enable Notifications",
+    "notificationsEnabled": "Notifications enabled"
   },
   "upsell": {
     "added": "Added!",

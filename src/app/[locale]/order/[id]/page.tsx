@@ -1,13 +1,19 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
-import { Check, ChefHat, Truck, Package, Loader2 } from 'lucide-react';
+import { Check, ChefHat, Truck, Package, Loader2, Bell, BellRing } from 'lucide-react';
 import { useOrderTracking } from '@/hooks/useOrderTracking';
 import { formatPrice } from '@/lib/utils';
+import {
+  isNotificationSupported,
+  getOrderNotificationPermission,
+  requestOrderNotificationPermission,
+} from '@/lib/order-notifications';
 import type { OrderStatus } from '@/types/order';
 
 const steps: { status: OrderStatus; icon: React.ReactNode }[] = [
@@ -24,10 +30,28 @@ export default function OrderTrackingPage() {
   const params = useParams();
   const orderId = params.id as string;
 
-  const { order, loading, isConnected } = useOrderTracking({ orderId });
+  const { order, loading, isConnected } = useOrderTracking({ orderId, locale });
+
+  const [notifPermission, setNotifPermission] = useState<string>('default');
+
+  useEffect(() => {
+    setNotifPermission(getOrderNotificationPermission());
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    const perm = await requestOrderNotificationPermission();
+    setNotifPermission(perm);
+  };
 
   const currentStatus = order?.status || 'pending';
   const currentStepIndex = steps.findIndex((s) => s.status === currentStatus);
+  const showNotifPrompt =
+    isNotificationSupported() &&
+    notifPermission !== 'granted' &&
+    notifPermission !== 'denied' &&
+    notifPermission !== 'unsupported' &&
+    currentStatus !== 'completed' &&
+    currentStatus !== 'cancelled';
 
   if (loading) {
     return (
@@ -71,6 +95,30 @@ export default function OrderTrackingPage() {
           <h1 className="text-2xl font-bold text-pizza-dark">{t('thankYou')}</h1>
           <p className="text-sm text-gray-500 mt-1">{t('estimatedTime')}</p>
         </div>
+
+        {/* Notification Prompt */}
+        {showNotifPrompt && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
+            <Bell className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-amber-800">{t('enableNotifications')}</p>
+            </div>
+            <button
+              onClick={handleEnableNotifications}
+              className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap transition-colors"
+            >
+              {t('enableNotificationsButton')}
+            </button>
+          </div>
+        )}
+
+        {/* Notifications Enabled Indicator */}
+        {notifPermission === 'granted' && currentStatus !== 'completed' && (
+          <div className="flex items-center justify-center gap-1.5 text-xs text-green-600 mb-4">
+            <BellRing className="w-3.5 h-3.5" />
+            <span>{t('notificationsEnabled')}</span>
+          </div>
+        )}
 
         {/* Order Number */}
         <div className="bg-white rounded-2xl p-4 shadow-sm text-center mb-6">

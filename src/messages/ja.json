@@ -94,7 +94,10 @@
     "orderDetails": "注文詳細",
     "thankYou": "ご注文ありがとうございます！",
     "estimatedTime": "お届け目安：30〜45分",
-    "backToMenu": "メニューに戻る"
+    "backToMenu": "メニューに戻る",
+    "enableNotifications": "注文ステータスの変更を通知します",
+    "enableNotificationsButton": "通知を有効にする",
+    "notificationsEnabled": "通知が有効です"
   },
   "upsell": {
     "added": "追加しました！",
