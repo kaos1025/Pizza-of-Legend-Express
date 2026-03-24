@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
 
   return (
     <div
-      className="min-h-screen bg-pizza-dark flex flex-col items-center justify-center px-4"
+      className="min-h-screen bg-black flex flex-col items-center justify-center px-4"
       onClick={() => hiddenInputRef.current?.focus()}
     >
       {/* Hidden input for keyboard support */}

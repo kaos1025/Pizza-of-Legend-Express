@@ -10,7 +10,7 @@ interface AdminShellProps {
 export const AdminShell = ({ children }: AdminShellProps) => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-pizza-dark text-white sticky top-0 z-50 shadow-md">
+      <header className="bg-black text-white sticky top-0 z-50 shadow-md">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image src="/images/logo.jpg" alt="Pizza of Legend" width={36} height={36} className="rounded-lg object-contain" />

@@ -29,7 +29,7 @@ export const Header = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-pizza-dark text-white px-4 py-3 shadow-md">
+    <header className="sticky top-0 z-50 bg-black text-white px-4 py-3 shadow-md">
       <div className="max-w-[430px] mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Image
