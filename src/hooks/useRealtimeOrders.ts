@@ -20,6 +20,9 @@ export function useRealtimeOrders({
   const [isConnected, setIsConnected] = useState(false);
   const previousOrderIdsRef = useRef<Set<string>>(new Set(initialOrders.map(o => o.id)));
   const channelRef = useRef<RealtimeChannel | null>(null);
+  // Always use latest callback without re-creating fetchOrders / re-subscribing
+  const onNewOrderRef = useRef(onNewOrder);
+  onNewOrderRef.current = onNewOrder;
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -30,8 +33,8 @@ export function useRealtimeOrders({
 
       // Detect new orders
       for (const order of fetchedOrders) {
-        if (!previousOrderIdsRef.current.has(order.id) && onNewOrder) {
-          onNewOrder(order);
+        if (!previousOrderIdsRef.current.has(order.id) && onNewOrderRef.current) {
+          onNewOrderRef.current(order);
         }
       }
       previousOrderIdsRef.current = new Set(fetchedOrders.map(o => o.id));
@@ -40,7 +43,7 @@ export function useRealtimeOrders({
     } catch {
       setIsConnected(false);
     }
-  }, [onNewOrder]);
+  }, []);
 
   useEffect(() => {
     fetchOrders();
