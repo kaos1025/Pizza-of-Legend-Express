@@ -77,8 +77,8 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items,
-          hotel_id: isDelivery ? hotelId : undefined,
-          room_number: isDelivery ? roomNumber : undefined,
+          hotel_id: isDelivery ? hotelId : null,
+          room_number: isDelivery ? roomNumber : null,
           messenger_id: messengerId.trim(),
           messenger_platform: messengerPlatform,
           special_requests: specialRequests || undefined,
@@ -90,7 +90,10 @@ export default function CheckoutPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Order failed');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.details || errData.error || 'Order failed');
+      }
 
       const order = await response.json();
 
@@ -104,8 +107,10 @@ export default function CheckoutPage() {
 
       clearCart();
       router.push(`/${locale}/order/${order.id}`);
-    } catch {
-      alert('Failed to place order. Please try again.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Order error:', msg);
+      alert(`Failed to place order: ${msg}`);
     } finally {
       setIsSubmitting(false);
     }
