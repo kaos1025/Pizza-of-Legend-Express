@@ -29,7 +29,7 @@ export const AdminOrderCenter = () => {
   }, []);
 
   useEffect(() => {
-    fetch('/api/hotels')
+    fetch('/api/hotels?all=true')
       .then((res) => res.json())
       .then((data) => {
         const map: Record<string, string> = {};

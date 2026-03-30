@@ -10,6 +10,7 @@
 -- Hotels
 CREATE TABLE hotels (
   id TEXT PRIMARY KEY,
+  name_ko TEXT,
   name_en TEXT NOT NULL,
   name_zh TEXT NOT NULL,
   name_ja TEXT NOT NULL,
@@ -204,25 +205,28 @@ CREATE POLICY "admin_settings_service_all" ON admin_settings
 -- ============================================================
 
 -- 5.1 Hotels
-INSERT INTO hotels (id, name_en, name_zh, name_ja, code, delivery_type, delivery_note, lobby_notice_en, lobby_notice_ko, lobby_notice_zh, lobby_notice_ja, sort_order) VALUES
-  ('best-western',  'Best Western Premier', '最佳西方尊贵酒店', 'ベストウェスタンプレミア', 'BWP', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 1),
-  ('hyatt-regency', 'Hyatt Regency Incheon', '仁川凯悦酒店', 'ハイアットリージェンシー仁川', 'REGENCY', 'lobby_only', '1층 로비에서 만나주세요',
+INSERT INTO hotels (id, name_ko, name_en, name_zh, name_ja, code, delivery_type, delivery_note, lobby_notice_en, lobby_notice_ko, lobby_notice_zh, lobby_notice_ja, sort_order) VALUES
+  ('best-western', '베스트웨스턴 프리미어', 'Best Western Premier', '最佳西方尊贵酒店', 'ベストウェスタンプレミア', 'BWP', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 1),
+  ('hyatt-regency', '하얏트리젠시', 'Hyatt Regency Incheon', '仁川凯悦酒店', 'ハイアットリージェンシー仁川', 'REGENCY', 'lobby_only', '1층 로비에서 만나주세요',
    'Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.',
    '1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.',
    '请到1楼大厅。我们的工作人员将在3-4分钟内到达。',
    '1階ロビーまでお越しください。スタッフが3〜4分で到着します。', 2),
-  ('paradise-city', 'Paradise City', '天堂城', 'パラダイスシティ', 'PARADISECITY', 'lobby_only', '1층 로비에서 만나주세요',
+  ('paradise-city', '파라다이스시티', 'Paradise City', '天堂城', 'パラダイスシティ', 'PARADISECITY', 'lobby_only', '1층 로비에서 만나주세요',
    'Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.',
    '1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.',
    '请到1楼大厅。我们的工作人员将在3-4分钟内到达。',
    '1階ロビーまでお越しください。スタッフが3〜4分で到着します。', 3),
-  ('grand-hyatt', 'Grand Hyatt Incheon - East Tower', '仁川君悦酒店东塔', 'グランドハイアット仁川イーストタワー', 'GRAND_HYATT', 'lobby_only', '1층 로비에서 만나주세요',
+  ('grand-hyatt', '그랜드하얏트 이스트 타워', 'Grand Hyatt Incheon - East Tower', '仁川君悦酒店东塔', 'グランドハイアット仁川イーストタワー', 'GRAND_HYATT', 'lobby_only', '1층 로비에서 만나주세요',
    'Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.',
    '1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.',
    '请到1楼大厅。我们的工作人员将在3-4分钟内到达。',
    '1階ロビーまでお越しください。スタッフが3〜4分で到着します。', 4),
-  ('hotel-hue',     'Hotel HUE',     '休酒店',   'ホテルヒュー',   'HUE', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 5),
-  ('guest-house',   'Guest House & Another Room', '民宿/另一间房', 'ゲストハウス＆アナザールーム', 'GUEST_HOUSE', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 6);
+  ('hotel-hue', '호텔휴', 'Hotel HUE', '休酒店', 'ホテルヒュー', 'HUE', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 5),
+  ('guest-house-1', '게스트하우스/어나더룸 1동', 'Guest House & Another Room No.1', '民宿/另一间房 1号楼', 'ゲストハウス＆アナザールーム 1棟', 'GUEST_HOUSE_1', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 6),
+  ('guest-house-2', '게스트하우스/어나더룸 2동', 'Guest House & Another Room No.2', '民宿/另一间房 2号楼', 'ゲストハウス＆アナザールーム 2棟', 'GUEST_HOUSE_2', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 7),
+  ('guest-house-3', '게스트하우스/어나더룸 3동', 'Guest House & Another Room No.3', '民宿/另一间房 3号楼', 'ゲストハウス＆アナザールーム 3棟', 'GUEST_HOUSE_3', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 8),
+  ('guest-house-4', '게스트하우스/어나더룸 4동', 'Guest House & Another Room No.4', '民宿/另一间房 4号楼', 'ゲストハウス＆アナザールーム 4棟', 'GUEST_HOUSE_4', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 9);
 
 -- 5.2 Menu Categories
 INSERT INTO menu_categories (key, label_en, label_zh, label_ja, icon, sort_order) VALUES

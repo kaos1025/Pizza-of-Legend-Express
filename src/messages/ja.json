@@ -114,7 +114,9 @@
     "enableNotifications": "注文ステータスの変更を通知します",
     "enableNotificationsButton": "通知を有効にする",
     "notificationsEnabled": "通知が有効です",
-    "lobbyAlert": "今すぐ1階ロビーへお越しください！スタッフが向かっています。（約3〜4分）"
+    "lobbyAlert": "今すぐ1階ロビーへお越しください！スタッフが向かっています。（約3〜4分）",
+    "subtotal": "小計",
+    "deliveryFee": "配達料"
   },
   "upsell": {
     "added": "追加しました！",

@@ -114,7 +114,9 @@
     "enableNotifications": "订单状态更新时通知您",
     "enableNotificationsButton": "开启通知",
     "notificationsEnabled": "通知已开启",
-    "lobbyAlert": "请现在前往1楼大厅！我们的工作人员正在路上。（约3-4分钟）"
+    "lobbyAlert": "请现在前往1楼大厅！我们的工作人员正在路上。（约3-4分钟）",
+    "subtotal": "小计",
+    "deliveryFee": "配送费"
   },
   "upsell": {
     "added": "已添加！",

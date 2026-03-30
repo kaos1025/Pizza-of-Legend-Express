@@ -1,14 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const includeInactive = request.nextUrl.searchParams.get('all') === 'true';
+
     if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
+      let query = supabase
         .from('hotels')
-        .select('id, name_ko, name_en, name_zh, name_ja, delivery_note, delivery_type, code, lobby_notice_en, lobby_notice_ko, lobby_notice_zh, lobby_notice_ja')
-        .eq('is_active', true)
-        .order('sort_order');
+        .select('id, name_ko, name_en, name_zh, name_ja, delivery_note, delivery_type, code, lobby_notice_en, lobby_notice_ko, lobby_notice_zh, lobby_notice_ja, is_active');
+
+      if (!includeInactive) {
+        query = query.eq('is_active', true);
+      }
+
+      const { data, error } = await query.order('sort_order');
 
       if (error) throw error;
 

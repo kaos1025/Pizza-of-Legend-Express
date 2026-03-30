@@ -114,7 +114,9 @@
     "enableNotifications": "Get notified when your order status changes",
     "enableNotificationsButton": "Enable Notifications",
     "notificationsEnabled": "Notifications enabled",
-    "lobbyAlert": "Please head to the 1st floor lobby now! Our staff is on the way. (Approx. 3-4 min)"
+    "lobbyAlert": "Please head to the 1st floor lobby now! Our staff is on the way. (Approx. 3-4 min)",
+    "subtotal": "Subtotal",
+    "deliveryFee": "Delivery Fee"
   },
   "upsell": {
     "added": "Added!",

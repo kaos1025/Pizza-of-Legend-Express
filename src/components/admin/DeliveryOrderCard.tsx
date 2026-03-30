@@ -61,7 +61,14 @@ export const DeliveryOrderCard = ({ order, onComplete }: DeliveryOrderCardProps)
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="font-bold text-pizza-red text-xl">{formatPrice(order.total_amount)}</span>
+        {order.delivery_fee > 0 ? (
+          <span>
+            <span className="font-bold text-pizza-red text-xl">{formatPrice(order.total_amount + order.delivery_fee)}</span>
+            <span className="text-xs text-gray-400 ml-1.5">(메뉴 {formatPrice(order.total_amount)} + 배달비 {formatPrice(order.delivery_fee)})</span>
+          </span>
+        ) : (
+          <span className="font-bold text-pizza-red text-xl">{formatPrice(order.total_amount)}</span>
+        )}
         <div className="flex gap-2">
           <button
             onClick={() => handleComplete('cash')}

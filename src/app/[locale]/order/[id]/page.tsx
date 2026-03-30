@@ -220,9 +220,21 @@ export default function OrderTrackingPage() {
                   </div>
                 </div>
               ))}
-              <div className="border-t pt-1 mt-1 font-bold flex justify-between">
+              {(order.delivery_fee ?? 0) > 0 && (
+                <div className="border-t pt-1 mt-1 flex justify-between text-gray-500">
+                  <span>{t('subtotal')}</span>
+                  <span>{formatPrice(order.total_amount)}</span>
+                </div>
+              )}
+              {(order.delivery_fee ?? 0) > 0 && (
+                <div className="flex justify-between text-gray-500">
+                  <span>{t('deliveryFee')}</span>
+                  <span>{formatPrice(order.delivery_fee!)}</span>
+                </div>
+              )}
+              <div className={`${(order.delivery_fee ?? 0) > 0 ? '' : 'border-t pt-1 mt-1'} font-bold flex justify-between`}>
                 <span>Total</span>
-                <span className="text-pizza-red">{formatPrice(order.total_amount)}</span>
+                <span className="text-pizza-red">{formatPrice(order.total_amount + (order.delivery_fee ?? 0))}</span>
               </div>
             </div>
           </div>

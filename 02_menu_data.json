@@ -24,7 +24,10 @@
     { "id": "paradise-city", "name_en": "Paradise City", "name_zh": "天堂城", "name_ja": "パラダイスシティ", "delivery_note": "1층 로비에서 만나주세요", "delivery_type": "lobby_only", "code": "PARADISECITY", "lobby_notice_en": "Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.", "lobby_notice_ko": "1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.", "lobby_notice_zh": "请到1楼大厅。我们的工作人员将在3-4分钟内到达。", "lobby_notice_ja": "1階ロビーまでお越しください。スタッフが3〜4分で到着します。" },
     { "id": "grand-hyatt", "name_en": "Grand Hyatt Incheon - East Tower", "name_zh": "仁川君悦酒店东塔", "name_ja": "グランドハイアット仁川イーストタワー", "delivery_note": "1층 로비에서 만나주세요", "delivery_type": "lobby_only", "code": "GRAND_HYATT", "lobby_notice_en": "Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.", "lobby_notice_ko": "1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.", "lobby_notice_zh": "请到1楼大厅。我们的工作人员将在3-4分钟内到达。", "lobby_notice_ja": "1階ロビーまでお越しください。スタッフが3〜4分で到着します。" },
     { "id": "hotel-hue", "name_en": "Hotel HUE", "name_zh": "休酒店", "name_ja": "ホテルヒュー", "delivery_note": "", "delivery_type": "door_to_door", "code": "HUE" },
-    { "id": "guest-house", "name_en": "Guest House & Another Room", "name_zh": "民宿/另一间房", "name_ja": "ゲストハウス＆アナザールーム", "delivery_note": "", "delivery_type": "door_to_door", "code": "GUEST_HOUSE" }
+    { "id": "guest-house-1", "name_en": "Guest House & Another Room No.1", "name_zh": "民宿/另一间房 1号楼", "name_ja": "ゲストハウス＆アナザールーム 1棟", "delivery_note": "", "delivery_type": "door_to_door", "code": "GUEST_HOUSE_1" },
+    { "id": "guest-house-2", "name_en": "Guest House & Another Room No.2", "name_zh": "民宿/另一间房 2号楼", "name_ja": "ゲストハウス＆アナザールーム 2棟", "delivery_note": "", "delivery_type": "door_to_door", "code": "GUEST_HOUSE_2" },
+    { "id": "guest-house-3", "name_en": "Guest House & Another Room No.3", "name_zh": "民宿/另一间房 3号楼", "name_ja": "ゲストハウス＆アナザールーム 3棟", "delivery_note": "", "delivery_type": "door_to_door", "code": "GUEST_HOUSE_3" },
+    { "id": "guest-house-4", "name_en": "Guest House & Another Room No.4", "name_zh": "民宿/另一间房 4号楼", "name_ja": "ゲストハウス＆アナザールーム 4棟", "delivery_note": "", "delivery_type": "door_to_door", "code": "GUEST_HOUSE_4" }
   ],
   "categories": [
     { "key": "half_half", "label_en": "Legendary Half & Half", "label_zh": "传奇半半披萨", "label_ja": "伝説のハーフ＆ハーフ", "icon": "🍕" },
