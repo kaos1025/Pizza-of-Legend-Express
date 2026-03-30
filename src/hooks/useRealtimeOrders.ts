@@ -14,12 +14,13 @@ interface UseRealtimeOrdersOptions {
 export function useRealtimeOrders({
   initialOrders,
   onNewOrder,
-  pollingInterval = 3000,
+  pollingInterval = 10000,
 }: UseRealtimeOrdersOptions) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [isConnected, setIsConnected] = useState(false);
   const previousOrderIdsRef = useRef<Set<string>>(new Set(initialOrders.map(o => o.id)));
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const isInitialLoadDoneRef = useRef(false);
   // Always use latest callback without re-creating fetchOrders / re-subscribing
   const onNewOrderRef = useRef(onNewOrder);
   onNewOrderRef.current = onNewOrder;
@@ -31,10 +32,15 @@ export function useRealtimeOrders({
       const data = await res.json();
       const fetchedOrders: Order[] = data.orders || [];
 
-      // Detect new pending orders only
-      for (const order of fetchedOrders) {
-        if (!previousOrderIdsRef.current.has(order.id) && order.status === 'pending' && onNewOrderRef.current) {
-          onNewOrderRef.current(order);
+      if (!isInitialLoadDoneRef.current) {
+        // First fetch: populate known IDs without triggering notifications
+        isInitialLoadDoneRef.current = true;
+      } else {
+        // Subsequent fetches: detect new pending orders
+        for (const order of fetchedOrders) {
+          if (!previousOrderIdsRef.current.has(order.id) && order.status === 'pending' && onNewOrderRef.current) {
+            onNewOrderRef.current(order);
+          }
         }
       }
       previousOrderIdsRef.current = new Set(fetchedOrders.map(o => o.id));
@@ -48,7 +54,10 @@ export function useRealtimeOrders({
   useEffect(() => {
     fetchOrders();
 
-    // Try Supabase Realtime
+    // Always poll as safety net (even with Realtime)
+    const interval = setInterval(fetchOrders, pollingInterval);
+
+    // Try Supabase Realtime for faster detection
     if (isSupabaseConfigured()) {
       const client = createBrowserClient();
       if (client) {
@@ -58,7 +67,6 @@ export function useRealtimeOrders({
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'orders' },
             () => {
-              // Refetch to get full order with items
               fetchOrders();
             }
           )
@@ -76,13 +84,12 @@ export function useRealtimeOrders({
         channelRef.current = channel;
 
         return () => {
+          clearInterval(interval);
           client.removeChannel(channel);
         };
       }
     }
 
-    // Fallback: polling
-    const interval = setInterval(fetchOrders, pollingInterval);
     return () => clearInterval(interval);
   }, [fetchOrders, pollingInterval]);
 
