@@ -92,7 +92,10 @@ export default function CheckoutPage() {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.details || errData.error || 'Order failed');
+        const errMsg = typeof errData.details === 'string' ? errData.details
+          : typeof errData.error === 'string' ? errData.error
+          : JSON.stringify(errData);
+        throw new Error(errMsg || 'Order failed');
       }
 
       const order = await response.json();

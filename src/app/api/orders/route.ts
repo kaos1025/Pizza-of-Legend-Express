@@ -201,9 +201,13 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('[POST /api/orders] Error:', message);
-    return NextResponse.json({ error: 'Internal server error', details: message }, { status: 500 });
+    // Supabase errors are plain objects with {message, code, details, hint}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supaErr = err as any;
+    const message = supaErr?.message || (err instanceof Error ? err.message : JSON.stringify(err));
+    const code = supaErr?.code || '';
+    console.error('[POST /api/orders] Error:', message, code);
+    return NextResponse.json({ error: message, code, details: message }, { status: 500 });
   }
 }
 
