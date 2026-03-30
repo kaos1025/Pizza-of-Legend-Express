@@ -11,6 +11,9 @@ export interface Order {
   hotel_id: string;
   room_number: string;
   messenger_id?: string;
+  messenger_platform?: 'whatsapp' | 'wechat' | 'line' | 'kakaotalk';
+  order_type: 'delivery' | 'pickup';
+  delivery_fee: number;
   /** Singular — matches DB column `special_request` */
   special_request?: string;
   /** @deprecated Use special_request instead. Kept for mock fallback compatibility. */

@@ -67,7 +67,7 @@ test.describe('Price Validation', () => {
     await page.waitForTimeout(800);
 
     // R and L prices should both be in the size buttons
-    await expect(page.locator('[data-testid="hh-size-R"]')).toContainText('₩22,900');
-    await expect(page.locator('[data-testid="hh-size-L"]')).toContainText('₩26,900');
+    await expect(page.locator('[data-testid="hh-size-R"]')).toContainText('₩25,900');
+    await expect(page.locator('[data-testid="hh-size-L"]')).toContainText('₩29,900');
   });
 });

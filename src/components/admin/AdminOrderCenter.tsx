@@ -21,6 +21,7 @@ export const AdminOrderCenter = () => {
   const [notifPermission, setNotifPermission] = useState<string>('default');
   const [hotelMap, setHotelMap] = useState<Record<string, string>>({});
   const [hotelKoMap, setHotelKoMap] = useState<Record<string, string>>({});
+  const [hotelDeliveryTypeMap, setHotelDeliveryTypeMap] = useState<Record<string, string>>({});
   const [ttsSettings, setTtsSettings] = useState<TtsSettings>({ enabled: true, volume: 1.0 });
 
   useEffect(() => {
@@ -33,19 +34,23 @@ export const AdminOrderCenter = () => {
       .then((data) => {
         const map: Record<string, string> = {};
         const koMap: Record<string, string> = {};
-        (data.hotels || []).forEach((h: { id: string; name_en: string; name_ko?: string }) => {
+        const dtMap: Record<string, string> = {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (data.hotels || []).forEach((h: any) => {
           map[h.id] = h.name_en;
           koMap[h.id] = h.name_ko || h.name_en;
+          dtMap[h.id] = h.delivery_type || 'door_to_door';
         });
         setHotelMap(map);
         setHotelKoMap(koMap);
+        setHotelDeliveryTypeMap(dtMap);
       })
       .catch(() => {});
   }, []);
 
   const handleNewOrder = useCallback((order: Order) => {
     const hotelNameKo = hotelKoMap[order.hotel_id] || hotelMap[order.hotel_id] || order.hotel_id;
-    notifyNewOrder(order.order_number, hotelNameKo, order.room_number);
+    notifyNewOrder(order.order_number, hotelNameKo, order.room_number, order.order_type);
   }, [hotelMap, hotelKoMap]);
 
   const { orders, isConnected, updateOrder } = useRealtimeOrders({
@@ -160,7 +165,7 @@ export const AdminOrderCenter = () => {
           <h2 className="font-bold text-base mb-2">신규 주문 ({pendingOrders.length})</h2>
           <div className="space-y-3">
             {pendingOrders.map((order) => (
-              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} hotelMap={hotelMap} hotelKoMap={hotelKoMap} />
+              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} hotelMap={hotelMap} hotelKoMap={hotelKoMap} hotelDeliveryTypeMap={hotelDeliveryTypeMap} />
             ))}
           </div>
         </section>
@@ -171,7 +176,7 @@ export const AdminOrderCenter = () => {
           <h2 className="font-bold text-base mb-2">진행중 ({activeOrders.length})</h2>
           <div className="space-y-3">
             {activeOrders.map((order) => (
-              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} hotelMap={hotelMap} hotelKoMap={hotelKoMap} />
+              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} hotelMap={hotelMap} hotelKoMap={hotelKoMap} hotelDeliveryTypeMap={hotelDeliveryTypeMap} />
             ))}
           </div>
         </section>
@@ -182,7 +187,7 @@ export const AdminOrderCenter = () => {
           <h2 className="font-bold text-base mb-2">처리 완료 ({doneOrders.length})</h2>
           <div className="space-y-3">
             {doneOrders.map((order) => (
-              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} hotelMap={hotelMap} hotelKoMap={hotelKoMap} />
+              <OrderCard key={order.id} order={order} onStatusChanged={updateOrder} hotelMap={hotelMap} hotelKoMap={hotelKoMap} hotelDeliveryTypeMap={hotelDeliveryTypeMap} />
             ))}
           </div>
         </section>

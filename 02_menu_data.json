@@ -19,11 +19,12 @@
     "S": { "label_en": "Small", "label_zh": "小号", "label_ja": "スモール" }
   },
   "hotels": [
-    { "id": "best-western", "name_en": "Best Western", "name_zh": "最佳西方酒店", "name_ja": "ベストウェスタン", "delivery_note": "로비 입구에서 전화" },
-    { "id": "paradise-city", "name_en": "Paradise City", "name_zh": "天堂城", "name_ja": "パラダイスシティ", "delivery_note": "1층 로비 데스크 앞" },
-    { "id": "e-air", "name_en": "E-Air", "name_zh": "E-Air酒店", "name_ja": "Eエアー", "delivery_note": "정문 앞" },
-    { "id": "nest-hotel", "name_en": "Nest Hotel", "name_zh": "巢酒店", "name_ja": "ネストホテル", "delivery_note": "로비" },
-    { "id": "golden-tulip", "name_en": "Golden Tulip", "name_zh": "金色郁金香", "name_ja": "ゴールデンチューリップ", "delivery_note": "로비" }
+    { "id": "best-western", "name_en": "Best Western Premier", "name_zh": "最佳西方尊贵酒店", "name_ja": "ベストウェスタンプレミア", "delivery_note": "", "delivery_type": "door_to_door", "code": "BWP" },
+    { "id": "hyatt-regency", "name_en": "Hyatt Regency Incheon", "name_zh": "仁川凯悦酒店", "name_ja": "ハイアットリージェンシー仁川", "delivery_note": "1층 로비에서 만나주세요", "delivery_type": "lobby_only", "code": "REGENCY", "lobby_notice_en": "Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.", "lobby_notice_ko": "1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.", "lobby_notice_zh": "请到1楼大厅。我们的工作人员将在3-4分钟内到达。", "lobby_notice_ja": "1階ロビーまでお越しください。スタッフが3〜4分で到着します。" },
+    { "id": "paradise-city", "name_en": "Paradise City", "name_zh": "天堂城", "name_ja": "パラダイスシティ", "delivery_note": "1층 로비에서 만나주세요", "delivery_type": "lobby_only", "code": "PARADISECITY", "lobby_notice_en": "Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.", "lobby_notice_ko": "1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.", "lobby_notice_zh": "请到1楼大厅。我们的工作人员将在3-4分钟内到达。", "lobby_notice_ja": "1階ロビーまでお越しください。スタッフが3〜4分で到着します。" },
+    { "id": "grand-hyatt", "name_en": "Grand Hyatt Incheon - East Tower", "name_zh": "仁川君悦酒店东塔", "name_ja": "グランドハイアット仁川イーストタワー", "delivery_note": "1층 로비에서 만나주세요", "delivery_type": "lobby_only", "code": "GRAND_HYATT", "lobby_notice_en": "Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.", "lobby_notice_ko": "1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.", "lobby_notice_zh": "请到1楼大厅。我们的工作人员将在3-4分钟内到达。", "lobby_notice_ja": "1階ロビーまでお越しください。スタッフが3〜4分で到着します。" },
+    { "id": "hotel-hue", "name_en": "Hotel HUE", "name_zh": "休酒店", "name_ja": "ホテルヒュー", "delivery_note": "", "delivery_type": "door_to_door", "code": "HUE" },
+    { "id": "guest-house", "name_en": "Guest House & Another Room", "name_zh": "民宿/另一间房", "name_ja": "ゲストハウス＆アナザールーム", "delivery_note": "", "delivery_type": "door_to_door", "code": "GUEST_HOUSE" }
   ],
   "categories": [
     { "key": "half_half", "label_en": "Legendary Half & Half", "label_zh": "传奇半半披萨", "label_ja": "伝説のハーフ＆ハーフ", "icon": "🍕" },
@@ -40,8 +41,8 @@
     "description_en": "Pick any 2 flavors you love",
     "description_zh": "随心选择两种口味",
     "description_ja": "お好みの2つの味を選べる",
-    "price_R": 22900,
-    "price_L": 26900,
+    "price_R": 25900,
+    "price_L": 29900,
     "available_pizzas": "all",
     "badge": "popular"
   },
@@ -257,81 +258,7 @@
       "half_half": true
     }
   ],
-  "set_menus": [
-    {
-      "id": "solo-set",
-      "name_en": "Solo Pizza & Side Set",
-      "name_zh": "一人份披萨套餐",
-      "name_ja": "おひとり様ピザ＆サイドセット",
-      "desc_en": "S-size pizza + side + Coke 500ml + pickle",
-      "desc_zh": "S号披萨+小食+可乐500ml+泡菜",
-      "desc_ja": "Sサイズピザ+サイド+コーラ500ml+ピクルス",
-      "price": 18900,
-      "sizes": null,
-      "badge": "popular",
-      "components": ["pizza_S", "side_choose", "coke_500ml", "pickle"]
-    },
-    {
-      "id": "set-1",
-      "name_en": "Set 1",
-      "name_zh": "套餐1",
-      "name_ja": "セット1",
-      "desc_en": "Pizza + Spaghetti + Coke 1.25L",
-      "desc_zh": "披萨+意面+可乐1.25L",
-      "desc_ja": "ピザ+スパゲティ+コーラ1.25L",
-      "price_R": 24900,
-      "price_L": 28900,
-      "components": ["pizza_choose", "spaghetti_choose", "coke_1.25L"]
-    },
-    {
-      "id": "set-2",
-      "name_en": "Set 2",
-      "name_zh": "套餐2",
-      "name_ja": "セット2",
-      "desc_en": "Pizza + Side + Coke 1.25L",
-      "desc_zh": "披萨+小食+可乐1.25L",
-      "desc_ja": "ピザ+サイド+コーラ1.25L",
-      "price_R": 24900,
-      "price_L": 28900,
-      "components": ["pizza_choose", "side_choose", "coke_1.25L"]
-    },
-    {
-      "id": "set-3",
-      "name_en": "Set 3",
-      "name_zh": "套餐3",
-      "name_ja": "セット3",
-      "desc_en": "Half & Half + Side + Coke 1.25L",
-      "desc_zh": "半半披萨+小食+可乐1.25L",
-      "desc_ja": "ハーフ＆ハーフ+サイド+コーラ1.25L",
-      "price_R": 26400,
-      "price_L": 30400,
-      "components": ["half_half", "side_choose", "coke_1.25L"]
-    },
-    {
-      "id": "set-4",
-      "name_en": "Set 4",
-      "name_zh": "套餐4",
-      "name_ja": "セット4",
-      "desc_en": "Pizza + Spaghetti + Side + Coke 1.25L",
-      "desc_zh": "披萨+意面+小食+可乐1.25L",
-      "desc_ja": "ピザ+スパゲティ+サイド+コーラ1.25L",
-      "price_R": 29900,
-      "price_L": 33900,
-      "components": ["pizza_choose", "spaghetti_choose", "side_choose", "coke_1.25L"]
-    },
-    {
-      "id": "double-set",
-      "name_en": "Double Pizza Set",
-      "name_zh": "双份披萨套餐",
-      "name_ja": "ダブルピザセット",
-      "desc_en": "Two pizzas — double the happiness!",
-      "desc_zh": "1+1超满足双份披萨",
-      "desc_ja": "1+1でたっぷり楽しめる",
-      "price_R": 33900,
-      "price_L": 40900,
-      "components": ["pizza_choose", "pizza_choose"]
-    }
-  ],
+  "set_menus": [],
   "sides": [
     { "id": "meat-oven-spaghetti", "name_en": "Meat Oven Spaghetti", "name_zh": "肉酱焗意面", "name_ja": "ミートオーブンスパゲティ", "price": 6500, "sub_category": "spaghetti" },
     { "id": "carbonara", "name_en": "Carbonara", "name_zh": "奶油培根意面", "name_ja": "カルボナーラ", "price": 7000, "sub_category": "spaghetti" },

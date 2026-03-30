@@ -12,11 +12,16 @@ const typeEmoji: Record<string, string> = {
   side: '🍗', drink: '🥤', sauce: '🫙',
 };
 
-export const OrderSummary = () => {
+interface OrderSummaryProps {
+  deliveryFee?: number;
+}
+
+export const OrderSummary = ({ deliveryFee = 0 }: OrderSummaryProps) => {
   const t = useTranslations('checkout');
   const locale = useLocale() as Locale;
   const items = useCartStore((state) => state.items);
   const totalAmount = useCartStore((state) => state.totalAmount);
+  const grandTotal = totalAmount + deliveryFee;
 
   return (
     <Accordion defaultValue={[0]}>
@@ -24,7 +29,7 @@ export const OrderSummary = () => {
         <AccordionTrigger className="px-4 py-3 hover:no-underline">
           <div className="flex justify-between w-full pr-2">
             <span className="font-bold text-pizza-dark">{t('orderSummary')}</span>
-            <span className="text-pizza-red font-bold">{formatPrice(totalAmount)}</span>
+            <span className="text-pizza-red font-bold">{formatPrice(grandTotal)}</span>
           </div>
         </AccordionTrigger>
         <AccordionContent className="px-4 pb-4">
@@ -58,9 +63,19 @@ export const OrderSummary = () => {
                 </div>
               );
             })}
-            <div className="border-t border-gray-100 pt-2 flex justify-between font-bold">
-              <span>{t('total')}</span>
-              <span className="text-pizza-red">{formatPrice(totalAmount)}</span>
+            <div className="border-t border-gray-100 pt-2 space-y-1">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>{t('subtotal')}</span>
+                <span>{formatPrice(totalAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>{t('deliveryFee')}</span>
+                <span>{deliveryFee > 0 ? formatPrice(deliveryFee) : t('deliveryFeeFree')}</span>
+              </div>
+              <div className="flex justify-between font-bold pt-1">
+                <span>{t('total')}</span>
+                <span className="text-pizza-red">{formatPrice(grandTotal)}</span>
+              </div>
             </div>
           </div>
         </AccordionContent>

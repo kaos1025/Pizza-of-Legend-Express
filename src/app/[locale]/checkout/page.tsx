@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -8,21 +8,34 @@ import { Header } from '@/components/layout/Header';
 import { HotelSelect } from '@/components/checkout/HotelSelect';
 import { OrderSummary } from '@/components/checkout/OrderSummary';
 import { PaymentNotice } from '@/components/checkout/PaymentNotice';
+import { OrderTypeToggle } from '@/components/checkout/OrderTypeToggle';
+import { PickupLocationCard } from '@/components/checkout/PickupLocationCard';
+import { MessengerInput } from '@/components/checkout/MessengerInput';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/utils';
+import type { Hotel, Locale } from '@/types/menu';
+
+// Default messenger by locale
+const DEFAULT_MESSENGER: Record<string, string> = {
+  en: 'whatsapp',
+  zh: 'wechat',
+  ja: 'line',
+};
 
 export default function CheckoutPage() {
   const t = useTranslations('checkout');
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const router = useRouter();
   const items = useCartStore((state) => state.items);
   const totalAmount = useCartStore((state) => state.totalAmount);
   const clearCart = useCartStore((state) => state.clearCart);
 
+  const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
   const [hotelId, setHotelId] = useState('');
+  const [, setSelectedHotel] = useState<Hotel | null>(null);
 
   // Pre-select hotel from QR code URL parameter (stored in localStorage on landing)
   useEffect(() => {
@@ -34,13 +47,24 @@ export default function CheckoutPage() {
   }, []);
 
   const [roomNumber, setRoomNumber] = useState('');
+  const [messengerPlatform, setMessengerPlatform] = useState(DEFAULT_MESSENGER[locale] || 'kakaotalk');
   const [messengerId, setMessengerId] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Honeypot field for bot prevention
   const [honeypot, setHoneypot] = useState('');
 
-  const isValid = hotelId && roomNumber && /^\d{1,4}$/.test(roomNumber) && items.length > 0;
+  const deliveryFee = orderType === 'delivery' ? 1000 : 0;
+  const grandTotal = totalAmount + deliveryFee;
+
+  const isDelivery = orderType === 'delivery';
+  const isValid = isDelivery
+    ? (hotelId && roomNumber && /^\d{1,4}$/.test(roomNumber) && messengerPlatform && messengerId.trim() && items.length > 0)
+    : (messengerPlatform && messengerId.trim() && items.length > 0);
+
+  const handleHotelChange = useCallback((hotel: Hotel | null) => {
+    setSelectedHotel(hotel);
+  }, []);
 
   const handlePlaceOrder = async () => {
     if (!isValid || honeypot) return;
@@ -52,11 +76,14 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items,
-          hotel_id: hotelId,
-          room_number: roomNumber,
-          messenger_id: messengerId || undefined,
+          hotel_id: isDelivery ? hotelId : undefined,
+          room_number: isDelivery ? roomNumber : undefined,
+          messenger_id: messengerId.trim(),
+          messenger_platform: messengerPlatform,
           special_requests: specialRequests || undefined,
-          total_amount: totalAmount,
+          total_amount: grandTotal,
+          delivery_fee: deliveryFee,
+          order_type: orderType,
           language: locale,
           _hp: honeypot,
         }),
@@ -97,40 +124,46 @@ export default function CheckoutPage() {
         {/* Payment Notice - MOST PROMINENT */}
         <PaymentNotice />
 
-        {/* Order Summary */}
-        <OrderSummary />
+        {/* Order Summary with delivery fee */}
+        <OrderSummary deliveryFee={deliveryFee} />
 
-        {/* Delivery Info */}
+        {/* Delivery / Pickup Toggle */}
+        <OrderTypeToggle value={orderType} onChange={setOrderType} />
+
+        {/* Delivery Info or Pickup Info */}
         <div className="bg-white rounded-2xl p-4 shadow-sm space-y-4">
-          <HotelSelect value={hotelId} onChange={setHotelId} />
+          {isDelivery ? (
+            <>
+              <HotelSelect value={hotelId} onChange={setHotelId} onHotelChange={handleHotelChange} />
 
-          <div>
-            <label className="block text-sm font-medium text-pizza-dark mb-1">
-              {t('roomLabel')}
-            </label>
-            <Input
-              data-testid="room-number"
-              type="text"
-              value={roomNumber}
-              onChange={(e) => setRoomNumber(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              placeholder={t('roomPlaceholder')}
-              className="rounded-xl"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-pizza-dark mb-1">
+                  {t('roomLabel')}
+                </label>
+                <Input
+                  data-testid="room-number"
+                  type="text"
+                  value={roomNumber}
+                  onChange={(e) => setRoomNumber(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder={t('roomPlaceholder')}
+                  className="rounded-xl"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                />
+              </div>
+            </>
+          ) : (
+            <PickupLocationCard />
+          )}
 
-          <div>
-            <label className="block text-sm font-medium text-pizza-dark mb-1">
-              {t('messengerLabel')}
-            </label>
-            <Input
-              type="text"
-              value={messengerId}
-              onChange={(e) => setMessengerId(e.target.value)}
-              placeholder={t('messengerPlaceholder')}
-              className="rounded-xl"
+          {/* Messenger Contact — required for both modes */}
+          <div className="border-t border-gray-100 pt-4">
+            <MessengerInput
+              platform={messengerPlatform}
+              onPlatformChange={setMessengerPlatform}
+              messengerId={messengerId}
+              onMessengerIdChange={setMessengerId}
             />
           </div>
 
@@ -161,9 +194,19 @@ export default function CheckoutPage() {
 
         {/* Place Order */}
         <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm text-gray-500">{t('subtotal')}</span>
+            <span className="text-sm text-gray-500">{formatPrice(totalAmount)}</span>
+          </div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-500">{t('deliveryFee')}</span>
+            <span className="text-sm text-gray-500">
+              {deliveryFee > 0 ? formatPrice(deliveryFee) : t('deliveryFeeFree')}
+            </span>
+          </div>
+          <div className="flex justify-between items-center mb-3 border-t border-gray-100 pt-2">
             <span className="font-bold text-pizza-dark">{t('total')}</span>
-            <span className="text-xl font-bold text-pizza-red">{formatPrice(totalAmount)}</span>
+            <span className="text-xl font-bold text-pizza-red">{formatPrice(grandTotal)}</span>
           </div>
           <Button
             data-testid="place-order"

@@ -32,11 +32,11 @@ test.describe('Half & Half Pizza', () => {
     await page.waitForTimeout(1000);
 
     // Verify R price in size button
-    await expect(page.locator('[data-testid="hh-size-R"]')).toContainText('₩22,900');
+    await expect(page.locator('[data-testid="hh-size-R"]')).toContainText('₩25,900');
 
     // Switch to L
     await page.locator('[data-testid="hh-size-L"]').click();
-    await expect(page.locator('[data-testid="hh-size-L"]')).toContainText('₩26,900');
+    await expect(page.locator('[data-testid="hh-size-L"]')).toContainText('₩29,900');
 
     // Add to cart
     await page.locator('[data-testid="hh-add-to-cart"]').click();

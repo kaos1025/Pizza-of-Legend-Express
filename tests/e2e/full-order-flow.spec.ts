@@ -35,8 +35,9 @@ test.describe('Full Order Flow', () => {
     await page.waitForTimeout(500);
 
     // Cart page — Checkout
-    await page.getByRole('button', { name: /Checkout/i }).click();
-    await page.waitForURL('**/checkout', { timeout: 5000 });
+    await page.waitForTimeout(1000);
+    await page.locator('button:has-text("Checkout")').click();
+    await page.waitForURL('**/checkout', { timeout: 10000 });
     await page.waitForTimeout(1500);
 
     // Select hotel
@@ -44,6 +45,10 @@ test.describe('Full Order Flow', () => {
 
     // Enter room
     await page.locator('[data-testid="room-number"]').fill('101');
+
+    // Fill messenger ID (now required)
+    // The messenger platform dropdown should default to WhatsApp for EN locale
+    await page.locator('input[placeholder*="ID"]').first().fill('test_user_123');
 
     // Place order
     await page.locator('[data-testid="place-order"]').click();

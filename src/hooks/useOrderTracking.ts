@@ -11,6 +11,9 @@ interface OrderTrackingData {
   order_number: string;
   status: OrderStatus;
   total_amount: number;
+  delivery_fee?: number;
+  order_type?: string;
+  hotel_id?: string;
   created_at: string;
   language?: string;
   items: Array<{

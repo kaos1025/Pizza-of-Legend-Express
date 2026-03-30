@@ -13,19 +13,27 @@ export const SettlementSummary = ({ orders }: SettlementSummaryProps) => {
   const completedOrders = orders.filter((o) => o.status === 'completed');
   const cashOrders = completedOrders.filter((o) => o.payment_method === 'cash');
   const cardOrders = completedOrders.filter((o) => o.payment_method === 'card');
+  const deliveryOrders = completedOrders.filter((o) => o.order_type === 'delivery');
+  const pickupOrders = completedOrders.filter((o) => o.order_type === 'pickup');
 
   const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total_amount, 0);
   const cashRevenue = cashOrders.reduce((sum, o) => sum + o.total_amount, 0);
   const cardRevenue = cardOrders.reduce((sum, o) => sum + o.total_amount, 0);
+  const deliveryFeeTotal = completedOrders.reduce((sum, o) => sum + (o.delivery_fee || 0), 0);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4">
       <h3 className="font-bold text-lg mb-3">📊 오늘의 정산</h3>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="text-center p-3 bg-green-50 rounded-lg">
           <p className="text-xs text-gray-500">총 매출</p>
           <p className="font-bold text-lg text-green-700">{formatPrice(totalRevenue)}</p>
-          <p className="text-xs text-gray-400">{completedOrders.length}건</p>
+          <p className="text-xs text-gray-400">{completedOrders.length}건 (배달 {deliveryOrders.length} / 픽업 {pickupOrders.length})</p>
+        </div>
+        <div className="text-center p-3 bg-orange-50 rounded-lg">
+          <p className="text-xs text-gray-500">배달비 수입</p>
+          <p className="font-bold text-lg text-orange-700">{formatPrice(deliveryFeeTotal)}</p>
+          <p className="text-xs text-gray-400">{deliveryOrders.length}건</p>
         </div>
         <div className="text-center p-3 bg-blue-50 rounded-lg">
           <p className="text-xs text-gray-500">현금</p>

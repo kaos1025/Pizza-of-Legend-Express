@@ -22,7 +22,9 @@ test.describe('Error Cases', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
 
+    // Fill room and messenger but leave hotel empty
     await page.locator('[data-testid="room-number"]').fill('101');
+    await page.locator('input[placeholder*="ID"]').first().fill('test_user');
     await expect(page.locator('[data-testid="place-order"]')).toBeDisabled();
   });
 
@@ -32,7 +34,21 @@ test.describe('Error Cases', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
 
+    // Fill hotel and messenger but leave room empty
     await page.locator('[data-testid="hotel-select"]').selectOption({ index: 1 });
+    await page.locator('input[placeholder*="ID"]').first().fill('test_user');
+    await expect(page.locator('[data-testid="place-order"]')).toBeDisabled();
+  });
+
+  test('place order disabled without messenger ID', async ({ page }) => {
+    await addPizzaToCart(page);
+    await page.goto('/en/checkout');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
+
+    // Fill hotel and room but leave messenger empty
+    await page.locator('[data-testid="hotel-select"]').selectOption({ index: 1 });
+    await page.locator('[data-testid="room-number"]').fill('101');
     await expect(page.locator('[data-testid="place-order"]')).toBeDisabled();
   });
 

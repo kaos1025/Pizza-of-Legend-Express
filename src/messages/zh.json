@@ -69,16 +69,29 @@
   "checkout": {
     "title": "结账",
     "orderSummary": "订单摘要",
+    "orderTypeDelivery": "配送",
+    "orderTypePickup": "自取",
     "hotelLabel": "选择酒店",
     "hotelPlaceholder": "请选择您的酒店",
     "roomLabel": "房间号",
     "roomPlaceholder": "请输入房间号",
-    "messengerLabel": "通讯账号（选填）",
-    "messengerPlaceholder": "WhatsApp 或 微信号",
+    "lobbyOnlyWarning": "该酒店不允许外卖送至客房。收到'开始配送'通知后，请到1楼大厅等候。（从店铺出发约3-4分钟）",
+    "pickupTitle": "自取地点",
+    "pickupAddress": "CU 便利店 - 仁川机场百乐达斯店（酒店大厅旁）",
+    "pickupMapButton": "在Naver地图中打开",
+    "messengerPlatformLabel": "通讯软件",
+    "messengerPlatformPlaceholder": "选择通讯软件",
+    "messengerIdLabel": "通讯账号",
+    "messengerIdPlaceholder": "输入您的 {platform} ID",
+    "messengerRequiredNote": "我们将通过此联系方式通知您配送进度。请确保您的ID可被搜索。",
+    "messengerWarning": "这对配送至关重要。没有有效的通讯ID，我们可能无法联系到您。",
     "specialLabel": "特殊要求（选填）",
     "specialPlaceholder": "任何特殊说明...",
     "paymentNotice": "向送货员支付现金或刷卡",
     "placeOrder": "提交订单",
+    "subtotal": "小计",
+    "deliveryFee": "配送费",
+    "deliveryFeeFree": "免费",
     "total": "总金额"
   },
   "order": {
@@ -97,7 +110,8 @@
     "backToMenu": "返回菜单",
     "enableNotifications": "订单状态更新时通知您",
     "enableNotificationsButton": "开启通知",
-    "notificationsEnabled": "通知已开启"
+    "notificationsEnabled": "通知已开启",
+    "lobbyAlert": "请现在前往1楼大厅！我们的工作人员正在路上。（约3-4分钟）"
   },
   "upsell": {
     "added": "已添加！",

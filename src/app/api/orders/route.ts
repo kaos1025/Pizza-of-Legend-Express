@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { items, hotel_id, room_number, messenger_id, special_request, special_requests, total_amount, language, _hp } = body;
+    const { items, hotel_id, room_number, messenger_id, messenger_platform, special_request, special_requests, total_amount, delivery_fee, order_type, language, _hp } = body;
 
     // Honeypot check
     if (_hp) {
@@ -35,12 +35,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate required fields
-    if (!items?.length || !hotel_id || !room_number) {
+    const isDelivery = order_type !== 'pickup';
+    if (!items?.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    if (isDelivery && (!hotel_id || !room_number)) {
+      return NextResponse.json({ error: 'Missing required fields for delivery' }, { status: 400 });
+    }
 
-    // Validate room number
-    if (!/^\d{1,4}$/.test(room_number)) {
+    // Validate room number (only for delivery)
+    if (isDelivery && !/^\d{1,4}$/.test(room_number)) {
       return NextResponse.json({ error: 'Invalid room number' }, { status: 400 });
     }
 
@@ -171,13 +175,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Add delivery fee to server total
+    const finalDeliveryFee = isDelivery ? (delivery_fee || 1000) : 0;
+
     const order = await createOrder({
       items: resolvedItems,
-      hotel_id,
-      room_number,
+      hotel_id: isDelivery ? hotel_id : undefined,
+      room_number: isDelivery ? room_number : undefined,
       messenger_id: messenger_id || undefined,
+      messenger_platform: messenger_platform || undefined,
       special_request: specialRequest || undefined,
       total_amount: serverTotal,
+      delivery_fee: finalDeliveryFee,
+      order_type: order_type || 'delivery',
       language: language || 'en',
     });
 

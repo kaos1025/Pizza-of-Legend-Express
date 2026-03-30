@@ -3,24 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { getHotels } from '@/lib/menu-data';
-import type { Locale } from '@/types/menu';
+import { AlertTriangle } from 'lucide-react';
+import type { Hotel, Locale } from '@/types/menu';
 
 interface HotelSelectProps {
   value: string;
   onChange: (value: string) => void;
+  onHotelChange?: (hotel: Hotel | null) => void;
 }
 
-interface HotelOption {
-  id: string;
-  name_en: string;
-  name_zh: string;
-  name_ja: string;
-}
-
-export const HotelSelect = ({ value, onChange }: HotelSelectProps) => {
+export const HotelSelect = ({ value, onChange, onHotelChange }: HotelSelectProps) => {
   const t = useTranslations('checkout');
   const locale = useLocale() as Locale;
-  const [hotels, setHotels] = useState<HotelOption[]>([]);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
 
   useEffect(() => {
     fetch('/api/hotels')
@@ -29,34 +24,33 @@ export const HotelSelect = ({ value, onChange }: HotelSelectProps) => {
         if (data.hotels && data.hotels.length > 0) {
           setHotels(data.hotels);
         } else {
-          const jsonHotels = getHotels();
-          setHotels(jsonHotels.map((h) => ({
-            id: h.id,
-            name_en: h.name_en,
-            name_zh: h.name_zh || '',
-            name_ja: h.name_ja || '',
-          })));
+          setHotels(getHotels());
         }
       })
       .catch(() => {
-        const jsonHotels = getHotels();
-        setHotels(jsonHotels.map((h) => ({
-          id: h.id,
-          name_en: h.name_en,
-          name_zh: h.name_zh || '',
-          name_ja: h.name_ja || '',
-        })));
+        setHotels(getHotels());
       });
   }, []);
 
-  const getName = (hotel: HotelOption) => {
+  // Notify parent when selected hotel changes
+  useEffect(() => {
+    if (onHotelChange) {
+      const selected = hotels.find((h) => h.id === value) || null;
+      onHotelChange(selected);
+    }
+  }, [value, hotels, onHotelChange]);
+
+  const getName = (hotel: Hotel) => {
     if (locale === 'zh') return hotel.name_zh || hotel.name_en;
     if (locale === 'ja') return hotel.name_ja || hotel.name_en;
     return hotel.name_en;
   };
 
+  const selectedHotel = hotels.find((h) => h.id === value);
+  const isLobbyOnly = selectedHotel?.delivery_type === 'lobby_only';
+
   return (
-    <div>
+    <div className="space-y-2">
       <label className="block text-sm font-medium text-pizza-dark mb-1">
         {t('hotelLabel')}
       </label>
@@ -75,6 +69,13 @@ export const HotelSelect = ({ value, onChange }: HotelSelectProps) => {
           </option>
         ))}
       </select>
+
+      {isLobbyOnly && (
+        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" />
+          <span>{t('lobbyOnlyWarning')}</span>
+        </div>
+      )}
     </div>
   );
 };

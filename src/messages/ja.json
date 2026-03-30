@@ -69,16 +69,29 @@
   "checkout": {
     "title": "お会計",
     "orderSummary": "注文内容",
+    "orderTypeDelivery": "配達",
+    "orderTypePickup": "テイクアウト",
     "hotelLabel": "ホテルを選択",
     "hotelPlaceholder": "ご宿泊のホテルを選択",
     "roomLabel": "部屋番号",
     "roomPlaceholder": "部屋番号を入力",
-    "messengerLabel": "メッセンジャーID（任意）",
-    "messengerPlaceholder": "WhatsApp または WeChat ID",
+    "lobbyOnlyWarning": "このホテルは客室への配達ができません。「配達開始」の通知を受けたら、1階ロビーでお待ちください。（店舗から約3〜4分）",
+    "pickupTitle": "受取場所",
+    "pickupAddress": "CU ベストウェスタン仁川空港店（ホテルロビー側）",
+    "pickupMapButton": "Naverマップで開く",
+    "messengerPlatformLabel": "メッセンジャーアプリ",
+    "messengerPlatformPlaceholder": "メッセンジャーを選択",
+    "messengerIdLabel": "メッセンジャーID",
+    "messengerIdPlaceholder": "{platform} IDを入力",
+    "messengerRequiredNote": "配達状況のご連絡に使用します。IDが検索可能であることをご確認ください。",
+    "messengerWarning": "配達に不可欠です。有効なメッセンジャーIDがないと、ご連絡できない場合があります。",
     "specialLabel": "特別なご要望（任意）",
     "specialPlaceholder": "特別な指示があればご記入ください...",
     "paymentNotice": "到着時に配達員にお支払い（現金またはカード）",
     "placeOrder": "注文を確定する",
+    "subtotal": "小計",
+    "deliveryFee": "配達料",
+    "deliveryFeeFree": "無料",
     "total": "合計金額"
   },
   "order": {
@@ -97,7 +110,8 @@
     "backToMenu": "メニューに戻る",
     "enableNotifications": "注文ステータスの変更を通知します",
     "enableNotificationsButton": "通知を有効にする",
-    "notificationsEnabled": "通知が有効です"
+    "notificationsEnabled": "通知が有効です",
+    "lobbyAlert": "今すぐ1階ロビーへお越しください！スタッフが向かっています。（約3〜4分）"
   },
   "upsell": {
     "added": "追加しました！",

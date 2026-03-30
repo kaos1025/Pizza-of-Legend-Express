@@ -7,13 +7,18 @@ import { Header } from '@/components/layout/Header';
 import { CategoryNav } from '@/components/menu/CategoryNav';
 import { MenuCard } from '@/components/menu/MenuCard';
 import { HalfHalfPicker } from '@/components/menu/HalfHalfPicker';
-import { SetMenuSelector } from '@/components/menu/SetMenuSelector';
+// import { SetMenuSelector } from '@/components/menu/SetMenuSelector';
 import { MenuDetailSheet, type DetailItem } from '@/components/menu/MenuDetailSheet';
 import { CartSummaryBar } from '@/components/cart/CartSummaryBar';
 import { UpsellSheet } from '@/components/menu/UpsellSheet';
-import { getPizzas, getSides, getDrinks, getSauces, getSetMenus, fetchPizzas, fetchSides, fetchDrinks, fetchSauces, fetchSetMenus } from '@/lib/menu-data';
-import type { Pizza, Side, Drink, Sauce, SetMenu } from '@/types/menu';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { getPizzas, getSides, getDrinks, getSauces, fetchPizzas, fetchSides, fetchDrinks, fetchSauces } from '@/lib/menu-data';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getSetMenus, fetchSetMenus } from '@/lib/menu-data'; // Kept for future set menu restoration
+import type { Pizza, Side, Drink, Sauce } from '@/types/menu';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { SetMenu } from '@/types/menu'; // Kept for future set menu restoration
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { Sheet, SheetContent } from '@/components/ui/sheet'; // Kept for future set menu restoration
 
 const HotelParamCapture = () => {
   const searchParams = useSearchParams();
@@ -31,7 +36,7 @@ const HotelParamCapture = () => {
 export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState('half_half');
   const [selectedItem, setSelectedItem] = useState<DetailItem | null>(null);
-  const [selectedSetMenu, setSelectedSetMenu] = useState<SetMenu | null>(null);
+  // const [selectedSetMenu, setSelectedSetMenu] = useState<SetMenu | null>(null);
   const [showUpsell, setShowUpsell] = useState(false);
 
   // Menu data — start with sync JSON, then upgrade to Supabase
@@ -39,14 +44,14 @@ export default function HomePage() {
   const [sides, setSides] = useState<Side[]>(getSides());
   const [drinks, setDrinks] = useState<Drink[]>(getDrinks());
   const [sauces, setSauces] = useState<Sauce[]>(getSauces());
-  const [setMenus, setSetMenus] = useState<SetMenu[]>(getSetMenus());
+  // const [setMenus, setSetMenus] = useState<SetMenu[]>(getSetMenus());
 
   useEffect(() => {
     fetchPizzas().then(setPizzas);
     fetchSides().then(setSides);
     fetchDrinks().then(setDrinks);
     fetchSauces().then(setSauces);
-    fetchSetMenus().then(setSetMenus);
+    // fetchSetMenus().then(setSetMenus);
   }, []);
 
   // Convert any menu item to DetailItem for the shared sheet
@@ -114,7 +119,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Set Menus Section */}
+        {/* Set Menus Section — disabled
         {activeCategory === 'set_menu' && (
           <div className="space-y-3">
             {setMenus.map((setMenu) => (
@@ -133,6 +138,7 @@ export default function HomePage() {
             ))}
           </div>
         )}
+        */}
 
         {/* Sides Section */}
         {activeCategory === 'side' && (
@@ -190,7 +196,7 @@ export default function HomePage() {
         onAdded={handleItemAdded}
       />
 
-      {/* Set Menu Selector Sheet */}
+      {/* Set Menu Selector Sheet — disabled
       <Sheet open={!!selectedSetMenu} onOpenChange={(open) => !open && setSelectedSetMenu(null)}>
         <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}>
           {selectedSetMenu && (
@@ -198,6 +204,7 @@ export default function HomePage() {
           )}
         </SheetContent>
       </Sheet>
+      */}
 
       {/* Upsell Sheet — shown after adding pizza/half-half to cart */}
       <UpsellSheet

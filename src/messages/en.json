@@ -69,16 +69,29 @@
   "checkout": {
     "title": "Checkout",
     "orderSummary": "Order Summary",
+    "orderTypeDelivery": "Delivery",
+    "orderTypePickup": "Pickup",
     "hotelLabel": "Select Hotel",
     "hotelPlaceholder": "Choose your hotel",
     "roomLabel": "Room Number",
     "roomPlaceholder": "Enter room number",
-    "messengerLabel": "Messenger ID (Optional)",
-    "messengerPlaceholder": "WhatsApp or WeChat ID",
+    "lobbyOnlyWarning": "This hotel does not allow food delivery to rooms. Please meet our staff at the 1st floor lobby when you receive the 'Delivery Started' notification. (Approx. 3-4 min from our store)",
+    "pickupTitle": "Pickup Location",
+    "pickupAddress": "CU Best Western Incheon Airport Branch (Hotel Lobby Side)",
+    "pickupMapButton": "Open in Naver Map",
+    "messengerPlatformLabel": "Messenger App",
+    "messengerPlatformPlaceholder": "Select messenger",
+    "messengerIdLabel": "Messenger ID",
+    "messengerIdPlaceholder": "Enter your {platform} ID",
+    "messengerRequiredNote": "We'll contact you here for delivery updates. Please make sure your ID is searchable.",
+    "messengerWarning": "This is essential for delivery. Without a valid messenger ID, we may not be able to reach you.",
     "specialLabel": "Special Requests (Optional)",
     "specialPlaceholder": "Any special instructions...",
     "paymentNotice": "Pay to the staff at your door (Cash or Card)",
     "placeOrder": "Place Order",
+    "subtotal": "Subtotal",
+    "deliveryFee": "Delivery Fee",
+    "deliveryFeeFree": "FREE",
     "total": "Total Amount"
   },
   "order": {
@@ -97,7 +110,8 @@
     "backToMenu": "Back to Menu",
     "enableNotifications": "Get notified when your order status changes",
     "enableNotificationsButton": "Enable Notifications",
-    "notificationsEnabled": "Notifications enabled"
+    "notificationsEnabled": "Notifications enabled",
+    "lobbyAlert": "Please head to the 1st floor lobby now! Our staff is on the way. (Approx. 3-4 min)"
   },
   "upsell": {
     "added": "Added!",

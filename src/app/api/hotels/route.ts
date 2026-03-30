@@ -6,7 +6,7 @@ export async function GET() {
     if (isSupabaseConfigured()) {
       const { data, error } = await supabase
         .from('hotels')
-        .select('id, name_ko, name_en, name_zh, name_ja, delivery_note')
+        .select('id, name_ko, name_en, name_zh, name_ja, delivery_note, delivery_type, code, lobby_notice_en, lobby_notice_ko, lobby_notice_zh, lobby_notice_ja')
         .eq('is_active', true)
         .order('sort_order');
 

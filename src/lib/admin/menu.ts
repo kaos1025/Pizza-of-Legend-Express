@@ -51,8 +51,9 @@ function initMenuItems(): MenuItem[] {
     });
   }
 
-  // Set menus
-  for (const set of menuDataJson.set_menus) {
+  // Set menus (currently empty — disabled per client feedback)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const set of menuDataJson.set_menus as any[]) {
     items.push({
       id: set.id,
       category: 'set_menu',

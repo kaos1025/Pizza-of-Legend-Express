@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 const categories = [
   { key: 'half_half', icon: '🍕' },
   { key: 'pizza', icon: '🍕' },
-  { key: 'set_menu', icon: '🎁' },
+  // { key: 'set_menu', icon: '🎁' },  // Disabled per client feedback — set menus removed
   { key: 'side', icon: '🍗' },
   { key: 'drink', icon: '🥤' },
   { key: 'sauce', icon: '🫙' },

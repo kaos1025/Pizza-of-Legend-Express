@@ -15,6 +15,7 @@ import {
   requestOrderNotificationPermission,
 } from '@/lib/order-notifications';
 import type { OrderStatus } from '@/types/order';
+import type { Hotel } from '@/types/menu';
 
 const steps: { status: OrderStatus; icon: React.ReactNode }[] = [
   { status: 'pending', icon: <Package className="w-5 h-5" /> },
@@ -33,10 +34,23 @@ export default function OrderTrackingPage() {
   const { order, loading, isConnected } = useOrderTracking({ orderId, locale });
 
   const [notifPermission, setNotifPermission] = useState<string>('default');
+  const [hotel, setHotel] = useState<Hotel | null>(null);
 
   useEffect(() => {
     setNotifPermission(getOrderNotificationPermission());
   }, []);
+
+  // Fetch hotel info to check lobby_only status
+  useEffect(() => {
+    if (!order?.hotel_id) return;
+    fetch('/api/hotels')
+      .then((res) => res.json())
+      .then((data) => {
+        const found = data.hotels?.find((h: Hotel) => h.id === order.hotel_id);
+        if (found) setHotel(found);
+      })
+      .catch(() => {});
+  }, [order?.hotel_id]);
 
   const handleEnableNotifications = async () => {
     const perm = await requestOrderNotificationPermission();
@@ -117,6 +131,14 @@ export default function OrderTrackingPage() {
           <div className="flex items-center justify-center gap-1.5 text-xs text-green-600 mb-4">
             <BellRing className="w-3.5 h-3.5" />
             <span>{t('notificationsEnabled')}</span>
+          </div>
+        )}
+
+        {/* Lobby Only Alert — shown when delivering to lobby_only hotel */}
+        {currentStatus === 'delivering' && hotel?.delivery_type === 'lobby_only' && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
+            <span className="text-xl flex-shrink-0">🏃</span>
+            <p className="text-sm font-medium text-red-700">{t('lobbyAlert')}</p>
           </div>
         )}
 

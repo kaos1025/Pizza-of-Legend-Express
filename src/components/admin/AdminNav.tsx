@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ClipboardList, UtensilsCrossed, Truck } from 'lucide-react';
+import { ClipboardList, UtensilsCrossed, Truck, BarChart3 } from 'lucide-react';
 
 const tabs = [
   { href: '/admin', label: '주문관제', icon: ClipboardList, exact: true, testId: 'admin-orders' },
   { href: '/admin/menu', label: '메뉴관리', icon: UtensilsCrossed, exact: false, testId: 'admin-menu' },
   { href: '/admin/delivery', label: '배달관리', icon: Truck, exact: false, testId: 'admin-delivery' },
+  { href: '/admin/sales', label: '매출현황', icon: BarChart3, exact: false, testId: 'admin-sales' },
 ];
 
 export const AdminNav = () => {

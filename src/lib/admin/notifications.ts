@@ -63,17 +63,24 @@ export function playNotificationSound() {
   }
 }
 
-export function notifyNewOrder(orderNumber: string, hotelName: string, roomNumber: string) {
+export function notifyNewOrder(orderNumber: string, hotelName: string, roomNumber: string, orderType?: string) {
   // Play sound
   playNotificationSound();
 
   // TTS announcement (after beep)
-  speakKorean(`새로운 주문이 들어왔습니다. ${hotelName} ${roomNumber}호 입니다.`);
+  if (orderType === 'pickup') {
+    speakKorean(`새로운 픽업 주문이 들어왔습니다. 주문번호 ${orderNumber}.`);
+  } else {
+    speakKorean(`새로운 배달 주문이 들어왔습니다. ${hotelName} ${roomNumber}호 입니다.`);
+  }
 
   // Browser notification
   if ('Notification' in window && Notification.permission === 'granted') {
+    const body = orderType === 'pickup'
+      ? `${orderNumber}\n픽업 주문`
+      : `${orderNumber}\n${hotelName} ${roomNumber}\uD638`;
     new Notification('\u{1F355} Legendary Order Arrived!', {
-      body: `${orderNumber}\n${hotelName} ${roomNumber}\uD638`,
+      body,
       icon: '/icon-192.png',
       tag: 'new-order',
     });

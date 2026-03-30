@@ -249,6 +249,12 @@ export async function fetchHotels(): Promise<Hotel[]> {
     name_zh: row.name_zh || '',
     name_ja: row.name_ja || '',
     delivery_note: row.delivery_note || '',
+    delivery_type: row.delivery_type || 'door_to_door',
+    lobby_notice_en: row.lobby_notice_en || undefined,
+    lobby_notice_ko: row.lobby_notice_ko || undefined,
+    lobby_notice_zh: row.lobby_notice_zh || undefined,
+    lobby_notice_ja: row.lobby_notice_ja || undefined,
+    code: row.code || undefined,
   }));
 }
 
@@ -272,8 +278,8 @@ export async function fetchHalfHalfConfig(): Promise<HalfHalfConfig> {
     description_en: data.description_en || '',
     description_zh: data.description_zh || '',
     description_ja: data.description_ja || '',
-    price_R: prices.find((p) => p.size === 'R')?.price || 22900,
-    price_L: prices.find((p) => p.size === 'L')?.price || 26900,
+    price_R: prices.find((p) => p.size === 'R')?.price || 25900,
+    price_L: prices.find((p) => p.size === 'L')?.price || 29900,
     available_pizzas: 'all',
     badge: data.badge || 'popular',
   };

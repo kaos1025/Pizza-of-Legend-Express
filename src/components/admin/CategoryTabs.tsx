@@ -7,7 +7,7 @@ interface CategoryTabsProps {
 
 const categories = [
   { key: 'pizza', label: '피자', icon: '🍕' },
-  { key: 'set_menu', label: '세트메뉴', icon: '🎁' },
+  // { key: 'set_menu', label: '세트메뉴', icon: '🎁' },  // Disabled per client feedback
   { key: 'side', label: '사이드', icon: '🍗' },
   { key: 'drink', label: '음료', icon: '🥤' },
   { key: 'sauce', label: '소스', icon: '🫙' },

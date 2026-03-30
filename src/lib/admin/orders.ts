@@ -59,11 +59,14 @@ export async function getOrders(filter?: string): Promise<Order[]> {
 export async function createOrder(orderData: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   items: any[];
-  hotel_id: string;
-  room_number: string;
+  hotel_id?: string;
+  room_number?: string;
   messenger_id?: string;
+  messenger_platform?: string;
   special_request?: string;
   total_amount: number;
+  delivery_fee?: number;
+  order_type?: string;
   language?: string;
 }): Promise<Order> {
   if (isSupabaseConnected()) {
@@ -73,11 +76,14 @@ export async function createOrder(orderData: {
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
-        hotel_id: orderData.hotel_id,
-        room_number: orderData.room_number,
+        hotel_id: orderData.hotel_id || null,
+        room_number: orderData.room_number || null,
         messenger_id: orderData.messenger_id || null,
+        messenger_platform: orderData.messenger_platform || null,
         special_request: orderData.special_request || null,
         total_amount: orderData.total_amount,
+        delivery_fee: orderData.delivery_fee || 0,
+        order_type: orderData.order_type || 'delivery',
         status: 'pending',
         language: orderData.language || 'en',
       })
@@ -130,12 +136,15 @@ export async function createOrder(orderData: {
     id: `order-${Date.now()}`,
     order_number: `POL-${dateStr}-${seq}`,
     items: orderData.items,
-    hotel_id: orderData.hotel_id,
-    room_number: orderData.room_number,
+    hotel_id: orderData.hotel_id || '',
+    room_number: orderData.room_number || '',
     messenger_id: orderData.messenger_id,
+    messenger_platform: orderData.messenger_platform as Order['messenger_platform'],
     special_request: orderData.special_request,
     special_requests: orderData.special_request, // backward compat
     total_amount: orderData.total_amount,
+    delivery_fee: orderData.delivery_fee || 0,
+    order_type: (orderData.order_type as Order['order_type']) || 'delivery',
     language: orderData.language || 'en',
     status: 'pending',
     created_at: now.toISOString(),
@@ -278,6 +287,9 @@ function transformDbOrder(row: Record<string, any>): Order {
     hotel_id: row.hotel_id,
     room_number: row.room_number,
     messenger_id: row.messenger_id || undefined,
+    messenger_platform: row.messenger_platform || undefined,
+    order_type: row.order_type || 'delivery',
+    delivery_fee: row.delivery_fee || 0,
     special_request: row.special_request || undefined,
     status: row.status,
     payment_method: row.payment_method || undefined,
@@ -295,6 +307,8 @@ export function getTodaySettlement(orders: Order[]) {
   const completed = orders.filter(o => o.status === 'completed');
   const cash = completed.filter(o => o.payment_method === 'cash');
   const card = completed.filter(o => o.payment_method === 'card');
+  const delivery = completed.filter(o => o.order_type === 'delivery');
+  const pickup = completed.filter(o => o.order_type === 'pickup');
 
   return {
     totalRevenue: completed.reduce((s, o) => s + o.total_amount, 0),
@@ -303,6 +317,9 @@ export function getTodaySettlement(orders: Order[]) {
     cashCount: cash.length,
     cardRevenue: card.reduce((s, o) => s + o.total_amount, 0),
     cardCount: card.length,
+    deliveryFeeTotal: completed.reduce((s, o) => s + (o.delivery_fee || 0), 0),
+    deliveryCount: delivery.length,
+    pickupCount: pickup.length,
   };
 }
 

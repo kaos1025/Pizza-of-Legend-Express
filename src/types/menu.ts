@@ -62,6 +62,12 @@ export interface Hotel {
   name_zh: string;
   name_ja: string;
   delivery_note: string;
+  delivery_type: 'door_to_door' | 'lobby_only';
+  lobby_notice_en?: string;
+  lobby_notice_ko?: string;
+  lobby_notice_zh?: string;
+  lobby_notice_ja?: string;
+  code?: string;
 }
 
 // --- Category ---

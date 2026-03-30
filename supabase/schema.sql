@@ -14,6 +14,12 @@ CREATE TABLE hotels (
   name_zh TEXT NOT NULL,
   name_ja TEXT NOT NULL,
   delivery_note TEXT,
+  delivery_type TEXT NOT NULL DEFAULT 'door_to_door',
+  code TEXT,
+  lobby_notice_en TEXT,
+  lobby_notice_ko TEXT,
+  lobby_notice_zh TEXT,
+  lobby_notice_ja TEXT,
   is_active BOOLEAN DEFAULT true,
   sort_order INT DEFAULT 0
 );
@@ -72,10 +78,13 @@ CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_number TEXT UNIQUE NOT NULL,
   hotel_id TEXT REFERENCES hotels(id),
-  room_number TEXT NOT NULL,
+  room_number TEXT,
   messenger_id TEXT,
+  messenger_platform TEXT CHECK (messenger_platform IN ('whatsapp', 'wechat', 'line', 'kakaotalk')),
   special_requests TEXT,
   total_amount INT NOT NULL,
+  delivery_fee INT NOT NULL DEFAULT 0,
+  order_type TEXT NOT NULL DEFAULT 'delivery' CHECK (order_type IN ('delivery', 'pickup')),
   status TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending','confirmed','delivering','completed','cancelled')),
   payment_method TEXT
@@ -195,12 +204,25 @@ CREATE POLICY "admin_settings_service_all" ON admin_settings
 -- ============================================================
 
 -- 5.1 Hotels
-INSERT INTO hotels (id, name_en, name_zh, name_ja, delivery_note, sort_order) VALUES
-  ('best-western',  'Best Western',  '最佳西方酒店',    'ベストウェスタン',       '로비 입구에서 전화',    1),
-  ('paradise-city', 'Paradise City', '天堂城',          'パラダイスシティ',      '1층 로비 데스크 앞',    2),
-  ('e-air',         'E-Air',         'E-Air酒店',       'Eエアー',              '정문 앞',              3),
-  ('nest-hotel',    'Nest Hotel',    '巢酒店',          'ネストホテル',          '로비',                 4),
-  ('golden-tulip',  'Golden Tulip',  '金色郁金香',      'ゴールデンチューリップ', '로비',                 5);
+INSERT INTO hotels (id, name_en, name_zh, name_ja, code, delivery_type, delivery_note, lobby_notice_en, lobby_notice_ko, lobby_notice_zh, lobby_notice_ja, sort_order) VALUES
+  ('best-western',  'Best Western Premier', '最佳西方尊贵酒店', 'ベストウェスタンプレミア', 'BWP', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 1),
+  ('hyatt-regency', 'Hyatt Regency Incheon', '仁川凯悦酒店', 'ハイアットリージェンシー仁川', 'REGENCY', 'lobby_only', '1층 로비에서 만나주세요',
+   'Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.',
+   '1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.',
+   '请到1楼大厅。我们的工作人员将在3-4分钟内到达。',
+   '1階ロビーまでお越しください。スタッフが3〜4分で到着します。', 2),
+  ('paradise-city', 'Paradise City', '天堂城', 'パラダイスシティ', 'PARADISECITY', 'lobby_only', '1층 로비에서 만나주세요',
+   'Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.',
+   '1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.',
+   '请到1楼大厅。我们的工作人员将在3-4分钟内到达。',
+   '1階ロビーまでお越しください。スタッフが3〜4分で到着します。', 3),
+  ('grand-hyatt', 'Grand Hyatt Incheon - East Tower', '仁川君悦酒店东塔', 'グランドハイアット仁川イーストタワー', 'GRAND_HYATT', 'lobby_only', '1층 로비에서 만나주세요',
+   'Please come to the 1st floor lobby. Our staff will arrive in 3-4 minutes.',
+   '1층 로비에서 만나주세요. 직원이 3~4분 내 도착합니다.',
+   '请到1楼大厅。我们的工作人员将在3-4分钟内到达。',
+   '1階ロビーまでお越しください。スタッフが3〜4分で到着します。', 4),
+  ('hotel-hue',     'Hotel HUE',     '休酒店',   'ホテルヒュー',   'HUE', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 5),
+  ('guest-house',   'Guest House & Another Room', '民宿/另一间房', 'ゲストハウス＆アナザールーム', 'GUEST_HOUSE', 'door_to_door', NULL, NULL, NULL, NULL, NULL, 6);
 
 -- 5.2 Menu Categories
 INSERT INTO menu_categories (key, label_en, label_zh, label_ja, icon, sort_order) VALUES
@@ -220,7 +242,7 @@ INSERT INTO half_half_config (id, name_en, name_zh, name_ja, desc_en, desc_zh, d
    'Pick any 2 flavors you love',
    '随心选择两种口味',
    'お好みの2つの味を選べる',
-   22900, 26900,
+   25900, 29900,
    'popular');
 
 -- 5.4 Pizzas (15)
@@ -241,14 +263,7 @@ INSERT INTO menu_items (id, category, name_ko, name_en, name_zh, name_ja, desc_e
   ('cream-buldak',        'pizza', '크림 불닭',        'Cream Buldak',        '奶油火鸡面披萨',     'クリームブルダック',       'Creamy sauce meets spicy hot chicken — perfect harmony',            '浓郁奶油酱与辣味炸鸡的完美搭配',                          '濃厚クリームソースと辛いチキンの絶妙なハーモニー',                  22900, 26900, NULL,        true, 14),
   ('cheddar-bulgalbi',    'pizza', '체다 불갈비',      'Cheddar Bulgalbi',    '切达烤排骨披萨',     'チェダープルカルビ',       'Gooey cheddar cheese & sweet-savory grilled beef',                  '浓郁切达芝士与甜咸烤肉',                                  '濃厚チェダーチーズと甘辛プルコギ',                                22900, 26900, 'signature', true, 15);
 
--- 5.5 Set Menus (6)
-INSERT INTO menu_items (id, category, name_ko, name_en, name_zh, name_ja, desc_en, desc_zh, desc_ja, price, price_r, price_l, badge, sort_order) VALUES
-  ('solo-set',   'set_menu', '혼자세트',   'Solo Pizza & Side Set', '一人份披萨套餐',  'おひとり様ピザ＆サイドセット', 'S-size pizza + side + Coke 500ml + pickle',              'S号披萨+小食+可乐500ml+泡菜',            'Sサイズピザ+サイド+コーラ500ml+ピクルス',     18900, NULL,  NULL,  'popular', 1),
-  ('set-1',      'set_menu', '세트1',      'Set 1',                 '套餐1',          'セット1',                    'Pizza + Spaghetti + Coke 1.25L',                         '披萨+意面+可乐1.25L',                    'ピザ+スパゲティ+コーラ1.25L',               NULL,  24900, 28900, NULL,      2),
-  ('set-2',      'set_menu', '세트2',      'Set 2',                 '套餐2',          'セット2',                    'Pizza + Side + Coke 1.25L',                              '披萨+小食+可乐1.25L',                    'ピザ+サイド+コーラ1.25L',                   NULL,  24900, 28900, NULL,      3),
-  ('set-3',      'set_menu', '세트3',      'Set 3',                 '套餐3',          'セット3',                    'Half & Half + Side + Coke 1.25L',                        '半半披萨+小食+可乐1.25L',                'ハーフ＆ハーフ+サイド+コーラ1.25L',           NULL,  26400, 30400, NULL,      4),
-  ('set-4',      'set_menu', '세트4',      'Set 4',                 '套餐4',          'セット4',                    'Pizza + Spaghetti + Side + Coke 1.25L',                  '披萨+意面+小食+可乐1.25L',               'ピザ+スパゲティ+サイド+コーラ1.25L',         NULL,  29900, 33900, NULL,      5),
-  ('double-set', 'set_menu', '두판세트',   'Double Pizza Set',      '双份披萨套餐',    'ダブルピザセット',             'Two pizzas — double the happiness!',                     '1+1超满足双份披萨',                       '1+1でたっぷり楽しめる',                      NULL,  33900, 40900, NULL,      6);
+-- 5.5 Set Menus — REMOVED (disabled per client feedback, data preserved in menu_categories for future use)
 
 -- 5.6 Sides (11)
 INSERT INTO menu_items (id, category, name_ko, name_en, name_zh, name_ja, desc_en, price, sub_category, sort_order) VALUES
@@ -283,6 +298,36 @@ INSERT INTO menu_items (id, category, name_ko, name_en, name_zh, name_ja, price,
 
 -- 5.9 Admin Settings (default PIN)
 INSERT INTO admin_settings (key, value) VALUES ('pin', '1234');
+
+-- ============================================================
+-- 6. VIEWS — Sales Summaries
+-- ============================================================
+
+CREATE OR REPLACE VIEW daily_sales_summary AS
+SELECT
+  DATE(created_at AT TIME ZONE 'Asia/Seoul') AS sale_date,
+  COUNT(*) AS order_count,
+  SUM(total_amount) AS total_sales,
+  SUM(delivery_fee) AS total_delivery_fee,
+  SUM(CASE WHEN payment_method = 'cash' THEN total_amount ELSE 0 END) AS cash_sales,
+  SUM(CASE WHEN payment_method = 'card' THEN total_amount ELSE 0 END) AS card_sales,
+  COUNT(CASE WHEN order_type = 'delivery' THEN 1 END) AS delivery_count,
+  COUNT(CASE WHEN order_type = 'pickup' THEN 1 END) AS pickup_count
+FROM orders
+WHERE status = 'completed'
+GROUP BY DATE(created_at AT TIME ZONE 'Asia/Seoul');
+
+CREATE OR REPLACE VIEW cumulative_sales_summary AS
+SELECT
+  COUNT(*) AS total_orders,
+  SUM(total_amount) AS total_revenue,
+  SUM(delivery_fee) AS total_delivery_fees,
+  SUM(CASE WHEN payment_method = 'cash' THEN total_amount ELSE 0 END) AS total_cash,
+  SUM(CASE WHEN payment_method = 'card' THEN total_amount ELSE 0 END) AS total_card,
+  MIN(created_at) AS first_order_at,
+  MAX(created_at) AS last_order_at
+FROM orders
+WHERE status = 'completed';
 
 -- ============================================================
 -- Done! Schema + seed data applied.
