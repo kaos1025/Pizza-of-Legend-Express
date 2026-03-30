@@ -87,9 +87,13 @@ export function notifyNewOrder(orderNumber: string, hotelName: string, roomNumbe
   }
 }
 
-export function notifyDeliveryCompleted(hotelName: string, roomNumber: string, paymentMethod: 'cash' | 'card') {
+export function notifyDeliveryCompleted(hotelName: string, roomNumber: string, paymentMethod: 'cash' | 'card', orderType?: string) {
   const paymentLabel = paymentMethod === 'cash' ? '현금 결제' : '카드 결제';
-  speakKorean(`배달 완료. ${hotelName} ${roomNumber}호. ${paymentLabel}.`);
+  if (orderType === 'pickup') {
+    speakKorean(`픽업 수령 완료. ${paymentLabel}.`);
+  } else {
+    speakKorean(`배달 완료. ${hotelName} ${roomNumber}호. ${paymentLabel}.`);
+  }
 }
 
 export function getNotificationPermission(): NotificationPermission | 'unsupported' {
