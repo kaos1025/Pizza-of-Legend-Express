@@ -5,7 +5,7 @@ import { MapPin, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 
 // TODO: 업주에게 CU 베스트웨스턴 인천공항점 네이버 지도 공유 링크 확인 후 교체
-const PICKUP_NAVER_MAP_URL = 'https://naver.me/placeholder';
+const PICKUP_NAVER_MAP_URL = 'https://naver.me/FaOAGc1H';
 
 export const PickupLocationCard = () => {
   const t = useTranslations('checkout');
