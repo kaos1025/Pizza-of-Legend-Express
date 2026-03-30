@@ -5,7 +5,7 @@ interface RateLimitEntry {
 const store = new Map<string, RateLimitEntry>();
 
 const WINDOW_MS = 5 * 60 * 1000; // 5 minutes
-const MAX_REQUESTS = 3;
+const MAX_REQUESTS = 10;
 
 // Clean up old entries periodically
 function cleanup() {
