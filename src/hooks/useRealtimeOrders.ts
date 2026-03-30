@@ -20,6 +20,7 @@ export function useRealtimeOrders({
   const [isConnected, setIsConnected] = useState(false);
   const previousOrderIdsRef = useRef<Set<string>>(new Set(initialOrders.map(o => o.id)));
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const isInitialLoadRef = useRef(true);
   // Always use latest callback without re-creating fetchOrders / re-subscribing
   const onNewOrderRef = useRef(onNewOrder);
   onNewOrderRef.current = onNewOrder;
@@ -31,10 +32,14 @@ export function useRealtimeOrders({
       const data = await res.json();
       const fetchedOrders: Order[] = data.orders || [];
 
-      // Detect new orders
-      for (const order of fetchedOrders) {
-        if (!previousOrderIdsRef.current.has(order.id) && onNewOrderRef.current) {
-          onNewOrderRef.current(order);
+      // Detect new orders — skip on initial load to avoid alerting for existing orders
+      if (isInitialLoadRef.current) {
+        isInitialLoadRef.current = false;
+      } else {
+        for (const order of fetchedOrders) {
+          if (!previousOrderIdsRef.current.has(order.id) && order.status === 'pending' && onNewOrderRef.current) {
+            onNewOrderRef.current(order);
+          }
         }
       }
       previousOrderIdsRef.current = new Set(fetchedOrders.map(o => o.id));

@@ -49,6 +49,8 @@ export const AdminOrderCenter = () => {
   }, []);
 
   const handleNewOrder = useCallback((order: Order) => {
+    // Only notify for genuinely new pending orders
+    if (order.status !== 'pending') return;
     const hotelNameKo = hotelKoMap[order.hotel_id] || hotelMap[order.hotel_id] || order.hotel_id;
     notifyNewOrder(order.order_number, hotelNameKo, order.room_number, order.order_type);
   }, [hotelMap, hotelKoMap]);
