@@ -69,7 +69,7 @@ export function notifyNewOrder(orderNumber: string, hotelName: string, roomNumbe
 
   // TTS announcement (after beep)
   if (orderType === 'pickup') {
-    speakKorean(`새로운 픽업 주문이 들어왔습니다. 주문번호 ${orderNumber}.`);
+    speakKorean('새로운 픽업 주문이 들어왔습니다.');
   } else {
     speakKorean(`새로운 배달 주문이 들어왔습니다. ${hotelName} ${roomNumber}호 입니다.`);
   }
