@@ -10,6 +10,7 @@ import { OrderSummary } from '@/components/checkout/OrderSummary';
 import { PaymentNotice } from '@/components/checkout/PaymentNotice';
 import { OrderTypeToggle } from '@/components/checkout/OrderTypeToggle';
 import { PickupLocationCard } from '@/components/checkout/PickupLocationCard';
+import { DeliveryAreaMap } from '@/components/checkout/DeliveryAreaMap';
 import { MessengerInput } from '@/components/checkout/MessengerInput';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -135,6 +136,8 @@ export default function CheckoutPage() {
           {isDelivery ? (
             <>
               <HotelSelect value={hotelId} onChange={setHotelId} onHotelChange={handleHotelChange} />
+
+              <DeliveryAreaMap />
 
               <div>
                 <label className="block text-sm font-medium text-pizza-dark mb-1">
