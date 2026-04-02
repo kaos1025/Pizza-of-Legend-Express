@@ -91,9 +91,9 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="bottom" className="rounded-t-3xl" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}>
-        <div className="py-4">
+        <div className="px-5 pt-5 pb-6">
           {/* Added confirmation */}
-          <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="flex items-center justify-center gap-2 mb-5">
             <div className="w-8 h-8 rounded-full bg-success-green flex items-center justify-center">
               <Check className="w-5 h-5 text-white" />
             </div>
@@ -101,10 +101,10 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
           </div>
 
           {/* Title */}
-          <h3 className="text-base font-bold text-pizza-dark mb-3">{t('title')}</h3>
+          <h3 className="text-base font-semibold text-gray-800 mb-4">{t('title')}</h3>
 
           {/* Recommended items horizontal scroll */}
-          <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 scrollbar-hide">
+          <div className="flex gap-3 overflow-x-auto pb-5 -mx-1 px-1 scrollbar-hide">
             {recommended.map((item) => {
               const isAdded = addedIds.has(item!.id);
               return (
@@ -146,27 +146,27 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
             })}
           </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={() => {
-                onClose();
-                onBrowseSides();
-              }}
-              className="flex-1 flex items-center justify-center gap-1 border border-gray-200 text-pizza-dark text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              {t('browseSides')}
-              <ChevronRight className="w-4 h-4" />
-            </button>
+          {/* Action buttons — vertical, Go to Cart first */}
+          <div className="flex flex-col gap-3">
             <button
               onClick={() => {
                 onClose();
                 router.push(`/${locale}/cart`);
               }}
-              className="flex-1 flex items-center justify-center gap-1 bg-pizza-dark text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 bg-pizza-dark text-white text-base font-semibold py-3.5 rounded-xl hover:bg-gray-800 transition-colors"
             >
               <ShoppingCart className="w-4 h-4" />
               {t('goToCart')}
+            </button>
+            <button
+              onClick={() => {
+                onClose();
+                onBrowseSides();
+              }}
+              className="w-full flex items-center justify-center gap-1 border border-gray-300 text-gray-700 text-base font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              {t('browseSides')}
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
