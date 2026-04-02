@@ -116,7 +116,8 @@
     "notificationsEnabled": "Notifications enabled",
     "lobbyAlert": "Please head to the 1st floor lobby now! Our staff is on the way. (Approx. 3-4 min)",
     "subtotal": "Subtotal",
-    "deliveryFee": "Delivery Fee"
+    "deliveryFee": "Delivery Fee",
+    "recentOrders": "My Recent Orders"
   },
   "upsell": {
     "added": "Added!",

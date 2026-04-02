@@ -7,7 +7,10 @@ import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Check, ChefHat, Truck, Package, Loader2, Bell, BellRing } from 'lucide-react';
+import Link from 'next/link';
 import { useOrderTracking } from '@/hooks/useOrderTracking';
+import { getOrderHistory } from '@/lib/order-history';
+import type { SavedOrder } from '@/lib/order-history';
 import { formatPrice } from '@/lib/utils';
 import {
   isNotificationSupported,
@@ -35,10 +38,12 @@ export default function OrderTrackingPage() {
 
   const [notifPermission, setNotifPermission] = useState<string>('default');
   const [hotel, setHotel] = useState<Hotel | null>(null);
+  const [otherOrders, setOtherOrders] = useState<SavedOrder[]>([]);
 
   useEffect(() => {
     setNotifPermission(getOrderNotificationPermission());
-  }, []);
+    setOtherOrders(getOrderHistory().filter((o) => o.id !== orderId));
+  }, [orderId]);
 
   // Fetch hotel info to check lobby_only status
   useEffect(() => {
@@ -248,6 +253,37 @@ export default function OrderTrackingPage() {
                 <span>Total</span>
                 <span className="text-pizza-red">{formatPrice(order.total_amount + (order.delivery_fee ?? 0))}</span>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* My Recent Orders */}
+        {otherOrders.length > 0 && (
+          <div className="bg-white rounded-2xl p-4 shadow-sm mb-6">
+            <h3 className="font-bold text-pizza-dark mb-2">{t('recentOrders')}</h3>
+            <div className="space-y-2">
+              {otherOrders.map((item) => {
+                const diff = Date.now() - new Date(item.created_at).getTime();
+                const mins = Math.floor(diff / 60000);
+                const timeText = mins < 60
+                  ? `${mins}min ago`
+                  : mins < 1440
+                    ? `${Math.floor(mins / 60)}h ago`
+                    : new Date(item.created_at).toLocaleDateString();
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/${locale}/order/${item.id}`}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <div>
+                      <span className="text-sm font-medium text-pizza-dark">{item.order_number}</span>
+                      <span className="text-xs text-gray-400 ml-2">{timeText}</span>
+                    </div>
+                    <span className="text-gray-400">→</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

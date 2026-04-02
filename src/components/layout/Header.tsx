@@ -6,12 +6,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ClipboardList } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
-
-interface SavedOrder {
-  id: string;
-  order_number: string;
-  created_at: string;
-}
+import { getOrderHistory } from '@/lib/order-history';
+import type { SavedOrder } from '@/lib/order-history';
 
 export const Header = () => {
   const t = useTranslations('brand');
@@ -20,12 +16,10 @@ export const Header = () => {
   const [lastOrder, setLastOrder] = useState<SavedOrder | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('pol_my_orders') || '[]');
-      if (saved.length > 0) {
-        setLastOrder(saved[0]);
-      }
-    } catch { /* ignore */ }
+    const history = getOrderHistory();
+    if (history.length > 0) {
+      setLastOrder(history[0]);
+    }
   }, []);
 
   return (

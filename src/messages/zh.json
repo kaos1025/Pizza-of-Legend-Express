@@ -116,7 +116,8 @@
     "notificationsEnabled": "通知已开启",
     "lobbyAlert": "请现在前往1楼大厅！我们的工作人员正在路上。（约3-4分钟）",
     "subtotal": "小计",
-    "deliveryFee": "配送费"
+    "deliveryFee": "配送费",
+    "recentOrders": "我的最近订单"
   },
   "upsell": {
     "added": "已添加！",
