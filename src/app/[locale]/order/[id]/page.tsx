@@ -212,7 +212,19 @@ export default function OrderTrackingPage() {
                     <span className="truncate block">
                       {item.name[locale as keyof typeof item.name] || item.name.en}
                     </span>
-                    {item.size && <span className="text-xs text-gray-400">{item.size}</span>}
+                    <div className="flex items-center gap-1">
+                      {item.size && <span className="text-xs text-gray-400">{item.size}</span>}
+                      {item.leftPizza && item.rightPizza && (
+                        <>
+                          {item.size && <span className="text-xs text-gray-400">·</span>}
+                          <span className="text-xs text-orange-600">
+                            {(item.leftPizza as Record<string, string>)[`name_${locale}`] || (item.leftPizza as Record<string, string>).name_en}
+                            {' + '}
+                            {(item.rightPizza as Record<string, string>)[`name_${locale}`] || (item.rightPizza as Record<string, string>).name_en}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {item.quantity > 1 && <span className="text-xs text-gray-400">×{item.quantity}</span>}

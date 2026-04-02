@@ -48,11 +48,23 @@ export const OrderSummary = ({ deliveryFee = 0 }: OrderSummaryProps) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="truncate block">{name}</span>
-                    {item.size && (
-                      <span className="text-gray-400 text-xs">
-                        {item.size === 'R' ? 'Regular' : item.size === 'L' ? 'Large' : 'Small'}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {item.size && (
+                        <span className="text-gray-400 text-xs">
+                          {item.size === 'R' ? 'Regular' : item.size === 'L' ? 'Large' : 'Small'}
+                        </span>
+                      )}
+                      {item.leftPizza && item.rightPizza && (
+                        <>
+                          {item.size && <span className="text-gray-400 text-xs">·</span>}
+                          <span className="text-orange-600 text-xs">
+                            {(item.leftPizza[`name_${locale}` as keyof typeof item.leftPizza] as string) || item.leftPizza.name_en}
+                            {' + '}
+                            {(item.rightPizza[`name_${locale}` as keyof typeof item.rightPizza] as string) || item.rightPizza.name_en}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {item.quantity > 1 && (

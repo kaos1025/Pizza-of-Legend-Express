@@ -15,7 +15,7 @@ const validTransitions: Record<OrderStatus, OrderStatus[]> = {
 };
 
 // Supabase select query that joins order_items with menu_items for names
-const ORDER_SELECT = '*, order_items(*, menu_item:menu_items!order_items_menu_item_id_fkey(name_en, name_zh, name_ja, category))';
+const ORDER_SELECT = '*, order_items(*, menu_item:menu_items!order_items_menu_item_id_fkey(name_en, name_zh, name_ja, category), half1:menu_items!order_items_half1_item_id_fkey(name_en, name_zh, name_ja), half2:menu_items!order_items_half2_item_id_fkey(name_en, name_zh, name_ja))';
 
 export async function getOrders(filter?: string): Promise<Order[]> {
   if (isSupabaseConnected()) {
@@ -265,18 +265,37 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function transformDbOrder(row: Record<string, any>): Order {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const items = (row.order_items || []).map((item: Record<string, any>) => ({
-    id: item.id,
-    type: item.menu_item?.category || 'pizza',
-    name: {
-      en: item.menu_item?.name_en || '',
-      zh: item.menu_item?.name_zh || '',
-      ja: item.menu_item?.name_ja || '',
-    },
-    size: item.size,
-    quantity: item.quantity,
-    unitPrice: item.unit_price,
-  }));
+  const items = (row.order_items || []).map((item: Record<string, any>) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cartItem: Record<string, any> = {
+      id: item.id,
+      type: item.menu_item?.category || 'pizza',
+      name: {
+        en: item.menu_item?.name_en || '',
+        zh: item.menu_item?.name_zh || '',
+        ja: item.menu_item?.name_ja || '',
+      },
+      size: item.size,
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+    };
+    // Reconstruct half-half pizza selection names from joined data
+    if (item.half1) {
+      cartItem.leftPizza = {
+        name_en: item.half1.name_en,
+        name_zh: item.half1.name_zh,
+        name_ja: item.half1.name_ja,
+      };
+    }
+    if (item.half2) {
+      cartItem.rightPizza = {
+        name_en: item.half2.name_en,
+        name_zh: item.half2.name_zh,
+        name_ja: item.half2.name_ja,
+      };
+    }
+    return cartItem;
+  });
 
   // Compute updated_at from status timestamps (DB has no updated_at column)
   const updated_at = row.cancelled_at

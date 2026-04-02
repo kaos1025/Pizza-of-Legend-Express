@@ -22,6 +22,8 @@ interface OrderTrackingData {
     quantity: number;
     unitPrice: number;
     image_url?: string;
+    leftPizza?: Record<string, string>;
+    rightPizza?: Record<string, string>;
   }>;
 }
 

@@ -117,10 +117,20 @@ export const OrderCard = ({ order, onStatusChanged, hotelMap = {}, hotelKoMap = 
     }
   };
 
+  // Build half-half sub-text for an item
+  const halfHalfText = (item: typeof order.items[0]) => {
+    if (item.leftPizza && item.rightPizza) {
+      return `${item.leftPizza.name_en} + ${item.rightPizza.name_en}`;
+    }
+    return null;
+  };
+
   // Inline items text for compact mode
-  const itemsSummary = order.items.map((item) =>
-    `${item.name.en}${item.size ? ` (${item.size})` : ''} x${item.quantity}`
-  ).join(' · ');
+  const itemsSummary = order.items.map((item) => {
+    const hh = halfHalfText(item);
+    const base = `${item.name.en}${item.size ? ` (${item.size})` : ''} x${item.quantity}`;
+    return hh ? `${base} [${hh}]` : base;
+  }).join(' · ');
 
   return (
     <div className={`bg-white rounded-xl border-l-4 border border-gray-200 p-3 shadow-sm ${STATUS_BORDER[order.status]} ${
@@ -231,9 +241,14 @@ export const OrderCard = ({ order, onStatusChanged, hotelMap = {}, hotelKoMap = 
         <>
           <div className="text-sm text-gray-600 space-y-0.5 mb-2">
             {order.items.map((item, i) => (
-              <p key={i}>
-                {item.name.en} {item.size && `(${item.size})`} x{item.quantity}
-              </p>
+              <div key={i}>
+                <p>
+                  {item.name.en} {item.size && `(${item.size})`} x{item.quantity}
+                </p>
+                {halfHalfText(item) && (
+                  <p className="text-xs text-orange-600 ml-2">🍕 {halfHalfText(item)}</p>
+                )}
+              </div>
             ))}
             {(order.special_request || order.special_requests) && (
               <p className="text-orange-600 mt-1">{order.special_request || order.special_requests}</p>
