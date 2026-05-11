@@ -11,7 +11,14 @@
       "Bash(npx playwright:*)",
       "Bash(git:*)",
       "Bash(gh pr:*)",
-      "Bash(gh auth:*)"
+      "Bash(gh auth:*)",
+      "Bash(xargs grep:*)",
+      "Bash(npx jest:*)",
+      "Bash(curl:*)",
+      "Bash(netstat -ano)",
+      "Bash(PORT=3001 npm run dev)",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test tests/e2e/half-half-display.spec.ts --reporter=line --project=\"Desktop Chrome\")",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test tests/e2e/half-half-display.spec.ts --reporter=line)"
     ]
   }
 }

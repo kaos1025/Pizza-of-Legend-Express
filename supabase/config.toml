@@ -1,0 +1,16 @@
+# Supabase project config — minimal.
+# 자세한 옵션: https://supabase.com/docs/guides/cli/config
+
+project_id = "sdvcaisxutdnagncxcgd"
+
+# ------------------------------------------------------------
+# Edge Functions
+# ------------------------------------------------------------
+# send-order-push:
+#   새 API 키 포맷(sb_secret_*) 은 JWT 가 아니라서
+#   게이트웨이의 JWT 검증을 통과하지 못한다.
+#   verify_jwt = false 로 게이트웨이 검증을 끄고,
+#   함수 내부의 Authorization === Bearer SERVICE_ROLE_KEY
+#   체크로 인증을 대신한다.
+[functions.send-order-push]
+verify_jwt = false

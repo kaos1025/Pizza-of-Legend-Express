@@ -31,6 +31,22 @@ yarn-error.log*
 # vercel
 .vercel
 
+# next-pwa generated artifacts
+/public/sw.js
+/public/sw.js.map
+/public/workbox-*.js
+/public/workbox-*.js.map
+/public/worker-*.js
+/public/worker-*.js.map
+/public/fallback-*.js
+/public/fallback-*.js.map
+
+# supabase cli temp
+/supabase/.temp/
+
+# oh-my-claudecode workspace
+/.omc/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
