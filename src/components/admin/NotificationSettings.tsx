@@ -12,6 +12,8 @@ import {
   RefreshCw,
   Trash2,
   Send,
+  Search,
+  MessageCircle,
 } from 'lucide-react';
 import {
   getCurrentSubscription,
@@ -20,6 +22,7 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
 } from '@/lib/push/subscribe';
+import type { TelegramNotificationConfig, DiscoveredChat } from '@/types/notifications';
 
 interface DeviceRow {
   id: string;
@@ -52,6 +55,18 @@ export const NotificationSettings = () => {
   const [iosNeedsInstall, setIosNeedsInstall] = useState(false);
   const [foregroundReceived, setForegroundReceived] = useState<number>(0);
 
+  // Telegram 설정 상태
+  const [tgLoading, setTgLoading] = useState(true);
+  const [tgConfig, setTgConfig] = useState<TelegramNotificationConfig>({
+    chat_id: null,
+    enabled: true,
+  });
+  const [tgInitial, setTgInitial] = useState<TelegramNotificationConfig>({
+    chat_id: null,
+    enabled: true,
+  });
+  const [discoveredChats, setDiscoveredChats] = useState<DiscoveredChat[]>([]);
+
   const showToast = useCallback((kind: ToastKind, message: string) => {
     setToast({ kind, message });
     setTimeout(() => setToast(null), 4000);
@@ -80,6 +95,21 @@ export const NotificationSettings = () => {
     }
   }, [showToast]);
 
+  const loadTelegram = useCallback(async () => {
+    setTgLoading(true);
+    try {
+      const res = await fetch('/api/admin/settings/telegram');
+      if (!res.ok) throw new Error(`telegram load failed (HTTP ${res.status})`);
+      const data = (await res.json()) as TelegramNotificationConfig;
+      setTgConfig(data);
+      setTgInitial(data);
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Telegram 설정 로드 실패');
+    } finally {
+      setTgLoading(false);
+    }
+  }, [showToast]);
+
   // 초기 로드
   useEffect(() => {
     setSupported(isPushSupported());
@@ -88,7 +118,8 @@ export const NotificationSettings = () => {
     }
     setIosNeedsInstall(detectIOSNeedsInstall());
     void refresh();
-  }, [refresh]);
+    void loadTelegram();
+  }, [refresh, loadTelegram]);
 
   // SW message 리스너 (foreground push 수신 표시)
   useEffect(() => {
@@ -179,6 +210,90 @@ export const NotificationSettings = () => {
     }
   };
 
+  // ===== Telegram handlers =====
+  const handleDiscover = async () => {
+    setBusy('tg-discover');
+    try {
+      const res = await fetch('/api/admin/settings/telegram/discover');
+      const data = (await res.json().catch(() => ({}))) as
+        | { chats?: DiscoveredChat[]; error?: string };
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      const chats = data.chats ?? [];
+      setDiscoveredChats(chats);
+      if (chats.length === 0) {
+        showToast(
+          'info',
+          '봇과 최근 상호작용한 채팅이 없습니다. 그룹에서 메시지 한 줄 보낸 뒤 다시 시도해주세요.',
+        );
+      } else {
+        showToast('success', `${chats.length}개 채팅 발견`);
+      }
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'discover 실패');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleSaveTelegram = async () => {
+    // 클라이언트측 1차 검증
+    const chatId = tgConfig.chat_id?.trim() ?? null;
+    if (chatId && !/^-?\d+$/.test(chatId)) {
+      showToast('error', 'chat_id는 정수여야 합니다 (예: -1001234567890)');
+      return;
+    }
+    setBusy('tg-save');
+    try {
+      const res = await fetch('/api/admin/settings/telegram', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          enabled: tgConfig.enabled,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as
+        | TelegramNotificationConfig
+        | { error?: string };
+      if (!res.ok) {
+        const msg = (data as { error?: string }).error ?? `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      const saved = data as TelegramNotificationConfig;
+      setTgConfig(saved);
+      setTgInitial(saved);
+      showToast('success', 'Telegram 설정 저장됨');
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : '저장 실패');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleTestTelegram = async () => {
+    setBusy('tg-test');
+    try {
+      const res = await fetch('/api/admin/settings/telegram/test', { method: 'POST' });
+      const data = (await res.json().catch(() => ({}))) as {
+        telegram?: { enabled: boolean; sent: boolean };
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      const tg = data.telegram;
+      if (tg?.sent) {
+        showToast('success', '텔레그램 메시지 발사됨 — 채팅 확인');
+      } else if (tg?.enabled === false) {
+        showToast('error', 'Telegram 비활성 또는 chat_id 미설정');
+      } else {
+        showToast('error', '발사 시도했지만 실패. 채팅ID·봇 멤버십·BOT_TOKEN 확인');
+      }
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : '테스트 실패');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const handleDeleteDevice = async (endpoint: string) => {
     if (!confirm('이 기기 등록을 완전히 삭제할까요? (되돌릴 수 없음)')) return;
     setBusy(endpoint);
@@ -199,6 +314,9 @@ export const NotificationSettings = () => {
 
   const isThisDeviceRegistered =
     !!currentEndpoint && devices.some((d) => d.endpoint === currentEndpoint && d.isActive);
+
+  const isTgDirty =
+    tgConfig.chat_id !== tgInitial.chat_id || tgConfig.enabled !== tgInitial.enabled;
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -340,6 +458,121 @@ export const NotificationSettings = () => {
             포그라운드 푸시 수신 카운트:{' '}
             <span className="font-mono font-semibold">{foregroundReceived}</span>
           </div>
+        )}
+      </section>
+
+      {/* Telegram 알림 설정 */}
+      <section className="rounded-lg bg-white border border-gray-200 p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="w-5 h-5 text-blue-500" />
+          <h2 className="text-base font-semibold text-gray-900">Telegram 알림</h2>
+        </div>
+
+        {tgLoading ? (
+          <div className="text-sm text-gray-500">불러오는 중…</div>
+        ) : (
+          <>
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={tgConfig.enabled}
+                onChange={(e) =>
+                  setTgConfig((c) => ({ ...c, enabled: e.target.checked }))
+                }
+                className="w-4 h-4 accent-pizza-red"
+              />
+              Telegram 알림 활성화
+            </label>
+
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Chat ID</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tgConfig.chat_id ?? ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setTgConfig((c) => ({ ...c, chat_id: v === '' ? null : v }));
+                  }}
+                  placeholder="예: -1001234567890 (그룹) 또는 123456789 (1:1)"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pizza-red/40 font-mono"
+                />
+                <button
+                  onClick={handleDiscover}
+                  disabled={!!busy}
+                  className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50 disabled:opacity-50 inline-flex items-center gap-1 flex-shrink-0"
+                >
+                  <Search className="w-4 h-4" />
+                  {busy === 'tg-discover' ? '찾는 중…' : '찾기'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                그룹은 <span className="font-mono">-100</span> 으로 시작하는 음수, 1:1 채팅은 양수
+              </p>
+            </div>
+
+            {discoveredChats.length > 0 && (
+              <div className="rounded-md border border-gray-200 bg-gray-50 p-2 space-y-1">
+                <div className="text-xs text-gray-600 mb-1 px-1">
+                  최근 봇과 상호작용한 채팅 — 클릭하면 chat_id 자동 입력:
+                </div>
+                {discoveredChats.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => {
+                      setTgConfig((cfg) => ({ ...cfg, chat_id: c.id }));
+                      setDiscoveredChats([]);
+                    }}
+                    className="w-full text-left px-2 py-1.5 rounded hover:bg-white text-sm flex items-center gap-2"
+                  >
+                    <span className="text-[10px] uppercase bg-gray-200 px-1.5 py-0.5 rounded font-medium">
+                      {c.type}
+                    </span>
+                    <span className="flex-1 truncate">{c.title}</span>
+                    <span className="font-mono text-xs text-gray-500">{c.id}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleSaveTelegram}
+                disabled={!!busy || !isTgDirty}
+                className="px-4 py-2 rounded-md bg-pizza-red text-white text-sm font-medium hover:bg-pizza-red/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {busy === 'tg-save' ? '저장 중…' : '💾 저장'}
+              </button>
+              <button
+                onClick={handleTestTelegram}
+                disabled={!!busy}
+                className="px-4 py-2 rounded-md border border-gray-300 text-gray-800 text-sm hover:bg-gray-50 disabled:opacity-50"
+              >
+                {busy === 'tg-test' ? '발사 중…' : '🧪 테스트 메시지'}
+              </button>
+            </div>
+
+            <details className="text-sm">
+              <summary className="cursor-pointer text-gray-600 hover:text-gray-900 select-none">
+                📖 Chat ID 찾는 방법
+              </summary>
+              <ol className="list-decimal pl-5 mt-2 space-y-1 text-gray-700">
+                <li>텔레그램에서 그룹 만들고 받을 사람들 초대</li>
+                <li>알림 봇을 그룹 멤버로 추가</li>
+                <li>봇을 admin 으로 승격 (&quot;Send Messages&quot; 권한만 유지)</li>
+                <li>그룹에서 누구든 메시지 한 줄 (예: &quot;hi&quot;) 전송</li>
+                <li>
+                  위 <span className="font-medium">[🔍 찾기]</span> 버튼 클릭 → 그룹 선택 → 저장
+                </li>
+                <li>
+                  <span className="font-medium">[🧪 테스트 메시지]</span> 로 도착 확인
+                </li>
+              </ol>
+              <p className="text-xs text-gray-500 mt-2">
+                ※ Telegram 의 getUpdates 는 최근 24시간 이내 메시지만 반환합니다. 그룹 추가 직후 메시지 한 줄이 꼭 필요해요.
+              </p>
+            </details>
+          </>
         )}
       </section>
 

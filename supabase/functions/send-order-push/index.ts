@@ -25,6 +25,7 @@
 
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import webpush from "npm:web-push@3.6.7";
+import { timingSafeEqual } from "node:crypto";
 
 // ------------------------------------------------------------
 // Env & Clients
@@ -37,8 +38,9 @@ const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
 const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:admin@pizzalegend.kr";
 
 const TG_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
-const TG_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") ?? "";
-const TG_ENABLED = !!(TG_TOKEN && TG_CHAT_ID);
+// TELEGRAM_CHAT_ID 는 이제 store_settings.key='telegram_notifications' 의 JSONB 값에서 읽음.
+// env 의 동일 이름 변수는 backward-compat 폴백으로만 유지 (DB 값 없을 때만).
+const TG_CHAT_ID_FALLBACK = Deno.env.get("TELEGRAM_CHAT_ID") ?? "";
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   console.error("[send-order-push] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
@@ -46,8 +48,8 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
   console.error("[send-order-push] Missing VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY");
 }
-if (!TG_ENABLED) {
-  console.log("[send-order-push] Telegram channel disabled (TELEGRAM_BOT_TOKEN/CHAT_ID not set)");
+if (!TG_TOKEN) {
+  console.log("[send-order-push] Telegram channel disabled (TELEGRAM_BOT_TOKEN not set)");
 }
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -105,7 +107,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const authHeader = req.headers.get("Authorization") ?? "";
   const expected = `Bearer ${SERVICE_ROLE_KEY}`;
-  if (!SERVICE_ROLE_KEY || authHeader !== expected) {
+  if (!SERVICE_ROLE_KEY || !safeCompare(authHeader, expected)) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -118,7 +120,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // ---------- Test mode ----------
   // deno-lint-ignore no-explicit-any
-  if ((body as any)?.test === true) {
+  const bodyAny = body as any;
+  if (bodyAny?.test === true) {
+    // channel 옵션: 'all' | 'telegram_only' | 'push_only'
+    const channel: "all" | "telegram_only" | "push_only" =
+      bodyAny?.channel === "telegram_only" || bodyAny?.channel === "push_only"
+        ? bodyAny.channel
+        : "all";
+
     const notification: NotificationPayload = {
       title: "🧪 테스트 알림",
       body: "Push 알림이 정상 동작합니다. (Pizza of Legend Express)",
@@ -133,14 +142,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
       "(Pizza of Legend Express)",
     ].join("\n");
 
-    const [pushResult, tgResult] = await Promise.all([
-      broadcastPush(notification),
-      sendTelegram(telegramText),
-    ]);
-    console.log(`[send-order-push] test mode push=${JSON.stringify(pushResult)} tg=${JSON.stringify(tgResult)}`);
+    const pushPromise: Promise<BroadcastResult> = channel === "telegram_only"
+      ? Promise.resolve({ total: 0, sent: 0, failed: 0, deactivated: 0 })
+      : broadcastPush(notification);
+    const tgPromise: Promise<TelegramResult> = channel === "push_only"
+      ? Promise.resolve({ enabled: false, sent: false })
+      : sendTelegram(telegramText);
+
+    const [pushResult, tgResult] = await Promise.all([pushPromise, tgPromise]);
+    console.log(`[send-order-push] test mode channel=${channel} push=${JSON.stringify(pushResult)} tg=${JSON.stringify(tgResult)}`);
     return jsonResponse({
       ok: true,
       mode: "test",
+      channel,
       ...pushResult,
       telegram: tgResult,
     });
@@ -303,14 +317,69 @@ function buildItemSummary(items: any[]): string {
 // Telegram channel
 // ------------------------------------------------------------
 
+// store_settings.key='telegram_notifications' JSONB 에서 chat_id/enabled 조회.
+// DB 값 없으면 TELEGRAM_CHAT_ID env 폴백.
+async function resolveTelegramConfig(): Promise<{
+  chatId: string | null;
+  enabled: boolean;
+  source: "DB" | "ENV" | "NONE";
+}> {
+  let dbEnabled = true;
+  let dbChatId: string | null = null;
+
+  try {
+    const { data, error } = await supabase
+      .from("store_settings")
+      .select("value")
+      .eq("key", "telegram_notifications")
+      .maybeSingle();
+
+    if (error) {
+      console.warn(`[Telegram] store_settings 조회 실패: ${error.message} — env 폴백 시도`);
+    } else if (data?.value) {
+      const v = data.value as { chat_id?: string | null; enabled?: boolean };
+      dbEnabled = v.enabled !== false;
+      dbChatId = typeof v.chat_id === "string" && v.chat_id.trim() !== "" ? v.chat_id.trim() : null;
+    }
+  } catch (err) {
+    console.warn("[Telegram] store_settings 조회 예외:", err);
+  }
+
+  // enabled=false 면 어떤 chat_id 든 발송 안 함
+  if (!dbEnabled) {
+    return { chatId: null, enabled: false, source: "DB" };
+  }
+
+  if (dbChatId) {
+    return { chatId: dbChatId, enabled: true, source: "DB" };
+  }
+  if (TG_CHAT_ID_FALLBACK) {
+    return { chatId: TG_CHAT_ID_FALLBACK, enabled: true, source: "ENV" };
+  }
+  return { chatId: null, enabled: true, source: "NONE" };
+}
+
 async function sendTelegram(text: string): Promise<TelegramResult> {
-  if (!TG_ENABLED) return { enabled: false, sent: false };
+  if (!TG_TOKEN) return { enabled: false, sent: false };
+
+  const config = await resolveTelegramConfig();
+  if (!config.enabled) {
+    console.log("[Telegram] enabled=false (store_settings) — skip");
+    return { enabled: false, sent: false };
+  }
+  if (!config.chatId) {
+    console.log("[Telegram] chat_id 없음 (DB/ENV 모두) — skip");
+    return { enabled: false, sent: false };
+  }
+
+  console.log(`[Telegram] chat_id 출처: ${config.source}`);
+
   try {
     const res = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chat_id: TG_CHAT_ID,
+        chat_id: config.chatId,
         text,
         disable_notification: false,
       }),
@@ -409,6 +478,17 @@ async function broadcastPush(notification: NotificationPayload): Promise<Broadca
 // ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
+
+// Timing-safe string equality.
+// 길이 mismatch 는 즉시 false (timingSafeEqual 자체가 다른 길이일 때 throw 함).
+// 길이 자체의 노출은 보안 민감도 낮음 (Bearer 토큰 길이는 사실상 공개 정보).
+function safeCompare(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const aBytes = enc.encode(a);
+  const bBytes = enc.encode(b);
+  if (aBytes.length !== bBytes.length) return false;
+  return timingSafeEqual(aBytes, bBytes);
+}
 
 function corsHeaders(): Record<string, string> {
   return {
