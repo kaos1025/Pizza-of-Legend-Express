@@ -132,7 +132,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       title: "🧪 테스트 알림",
       body: "Push 알림이 정상 동작합니다. (Pizza of Legend Express)",
       tag: `test-${Date.now()}`,
-      url: "/admin/orders",
+      url: "/admin",
       requireInteraction: false,
     };
     const telegramText = [
@@ -262,7 +262,7 @@ async function buildOrderNotifications(order: Record<string, any>): Promise<Orde
     body: `${itemSummary} / ₩${totalAmount.toLocaleString("ko-KR")}`,
     tag: `order-${orderNumber || orderId}`,
     orderNumber,
-    url: "/admin/orders",
+    url: "/admin",
     requireInteraction: true,
   };
 

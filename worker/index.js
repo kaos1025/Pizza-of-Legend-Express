@@ -56,7 +56,7 @@ self.addEventListener('push', (event) => {
         renotify: true,
         requireInteraction: data.requireInteraction !== false,
         vibrate: [200, 100, 200, 100, 200],
-        data: { url: data.url || '/admin/orders', orderNumber: data.orderNumber },
+        data: { url: data.url || '/admin', orderNumber: data.orderNumber },
       });
     })(),
   );
@@ -65,7 +65,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl =
-    (event.notification.data && event.notification.data.url) || '/admin/orders';
+    (event.notification.data && event.notification.data.url) || '/admin';
 
   event.waitUntil(
     (async () => {
