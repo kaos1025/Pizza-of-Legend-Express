@@ -74,8 +74,12 @@ export function notifyNewOrder(orderNumber: string, hotelName: string, roomNumbe
     speakKorean(`새로운 배달 주문이 들어왔습니다. ${hotelName} ${roomNumber}호 입니다.`);
   }
 
-  // Browser notification
-  if ('Notification' in window && Notification.permission === 'granted') {
+  // Browser notification — Push 와 중복 방지를 위해 페이지가 visible 일 때만 표시.
+  // 페이지가 hidden 이면 SW 가 Push 로 OS 알림을 띄우므로 여기선 스킵.
+  const isPageVisible =
+    typeof document !== 'undefined' && document.visibilityState === 'visible';
+
+  if (isPageVisible && 'Notification' in window && Notification.permission === 'granted') {
     const body = orderType === 'pickup'
       ? `${orderNumber}\n픽업 주문`
       : `${orderNumber}\n${hotelName} ${roomNumber}\uD638`;
