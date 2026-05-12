@@ -14,6 +14,13 @@ const withPWA = withPWAInit({
   skipWaiting: true,
   scope: '/',
   sw: 'sw.js',
+  // App Router 빌드 산출물 중 일부는 Vercel 에서 정적 자산으로 배포되지 않아
+  // precache 시 404 → Workbox 설치 rollback 발생. SW 활성화를 막아 push subscription
+  // 까지 깨지므로 precache 대상에서 제외한다.
+  buildExcludes: [
+    /app-build-manifest\.json$/,
+    /middleware-manifest\.json$/,
+  ],
   disable:
     process.env.NODE_ENV === 'development' &&
     process.env.NEXT_PUBLIC_ENABLE_PWA_DEV !== '1',
