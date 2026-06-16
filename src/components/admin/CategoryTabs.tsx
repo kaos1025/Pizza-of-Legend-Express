@@ -3,6 +3,8 @@
 interface CategoryTabsProps {
   activeCategory: string;
   onCategoryChange: (category: string) => void;
+  /** 렌더링하지 않을 카테고리 키 목록 (예: 항목이 없는 'side'). */
+  hiddenCategories?: string[];
 }
 
 const categories = [
@@ -13,10 +15,16 @@ const categories = [
   { key: 'sauce', label: '소스', icon: '🫙' },
 ];
 
-export const CategoryTabs = ({ activeCategory, onCategoryChange }: CategoryTabsProps) => {
+export const CategoryTabs = ({
+  activeCategory,
+  onCategoryChange,
+  hiddenCategories = [],
+}: CategoryTabsProps) => {
+  const visibleCategories = categories.filter((cat) => !hiddenCategories.includes(cat.key));
+
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">
-      {categories.map((cat) => (
+      {visibleCategories.map((cat) => (
         <button
           key={cat.key}
           onClick={() => onCategoryChange(cat.key)}

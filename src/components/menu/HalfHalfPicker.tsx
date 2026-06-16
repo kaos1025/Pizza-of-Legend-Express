@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/lib/store';
+import { useBusinessHours } from '@/hooks/useBusinessHours';
 import { getPizzas, getHalfHalfConfig, fetchPizzas } from '@/lib/menu-data';
 import type { Locale, Pizza, CartItem } from '@/types/menu';
 
@@ -19,8 +20,11 @@ interface HalfHalfPickerProps {
 
 export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
   const t = useTranslations('halfHalf');
+  const tHours = useTranslations('businessHours');
   const locale = useLocale() as Locale;
   const addItem = useCartStore((state) => state.addItem);
+  const { state: hoursState } = useBusinessHours();
+  const isClosed = !hoursState.isOpen && hoursState.reason !== 'disabled';
   const [pizzas, setPizzas] = useState(getPizzas());
   const config = getHalfHalfConfig();
 
@@ -30,12 +34,12 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
 
   const [leftPizzaId, setLeftPizzaId] = useState<string>('');
   const [rightPizzaId, setRightPizzaId] = useState<string>('');
-  const [size, setSize] = useState<'R' | 'L'>('R');
   const [pickingSide, setPickingSide] = useState<PickingSide>(null);
 
   const leftPizza = pizzas.find((p) => p.id === leftPizzaId);
   const rightPizza = pizzas.find((p) => p.id === rightPizzaId);
-  const price = size === 'R' ? config.price_R : config.price_L;
+  // L-only fixed price: ₩29,900 from config.price_L
+  const price = config.price_L;
 
   const getLocaleName = (pizza: Pizza) => {
     const key = `name_${locale}` as keyof Pizza;
@@ -52,17 +56,17 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
   };
 
   const handleAddToCart = () => {
-    if (!leftPizza || !rightPizza) return;
+    if (!leftPizza || !rightPizza || isClosed) return;
 
     const item: CartItem = {
-      id: `hh-${leftPizza.id}-${rightPizza.id}-${size}-${Date.now()}`,
+      id: `hh-${leftPizza.id}-${rightPizza.id}-L-${Date.now()}`,
       type: 'half_half',
       name: {
         en: `Half & Half: ${leftPizza.name_en} + ${rightPizza.name_en}`,
         zh: `半半披萨: ${leftPizza.name_zh} + ${rightPizza.name_zh}`,
         ja: `ハーフ＆ハーフ: ${leftPizza.name_ja} + ${rightPizza.name_ja}`,
       },
-      size,
+      size: 'L',
       quantity: 1,
       unitPrice: price,
       image_url: leftPizza.image_url,
@@ -152,41 +156,18 @@ export const HalfHalfPicker = ({ onAddedToCart }: HalfHalfPickerProps) => {
         </button>
       </div>
 
-      {/* Size selection */}
-      <div className="flex gap-2 mb-2">
-        <button
-          data-testid="hh-size-R"
-          onClick={() => setSize('R')}
-          aria-pressed={size === 'R'}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-            size === 'R'
-              ? 'border-pizza-red bg-pizza-red text-white'
-              : 'border-gray-200 text-pizza-dark hover:border-pizza-red'
-          }`}
-        >
-          Regular (12&quot;) - {formatPrice(config.price_R)}
-        </button>
-        <button
-          data-testid="hh-size-L"
-          onClick={() => setSize('L')}
-          aria-pressed={size === 'L'}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-            size === 'L'
-              ? 'border-pizza-red bg-pizza-red text-white'
-              : 'border-gray-200 text-pizza-dark hover:border-pizza-red'
-          }`}
-        >
-          Large (14&quot;) - {formatPrice(config.price_L)}
-        </button>
-      </div>
-
       <p className="text-xs text-gray-400 text-center mb-3">{t('fixedPrice')}</p>
+
+      {isClosed && (
+        <p className="text-xs text-gray-400 text-center mb-2">{tHours('disabledTooltip')}</p>
+      )}
 
       <Button
         data-testid="hh-add-to-cart"
         onClick={handleAddToCart}
-        disabled={!leftPizza || !rightPizza}
-        className="w-full bg-pizza-red hover:bg-red-700 text-white font-semibold py-3 rounded-xl disabled:opacity-40"
+        disabled={!leftPizza || !rightPizza || isClosed}
+        title={isClosed ? tHours('disabledTooltip') : undefined}
+        className="w-full bg-pizza-red hover:bg-red-700 text-white font-semibold py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {t('title')} - {formatPrice(price)}
       </Button>

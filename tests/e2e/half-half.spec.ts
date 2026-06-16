@@ -19,8 +19,9 @@ test.describe('Half & Half Pizza', () => {
     await page.locator('[data-testid="half-left"]').click();
     await page.waitForTimeout(1000);
 
-    // Select first pizza in the picker sheet
-    await page.locator('.aspect-square').first().click();
+    // Select first pizza inside the bottom sheet picker grid
+    const sheetContent = page.locator('[data-slot="sheet-content"]');
+    await sheetContent.locator('button.rounded-xl').first().click();
     await page.waitForTimeout(1000);
 
     // Click right half circle area
@@ -28,15 +29,11 @@ test.describe('Half & Half Pizza', () => {
     await page.waitForTimeout(1000);
 
     // Select a different pizza (3rd one)
-    await page.locator('.aspect-square').nth(2).click();
+    await sheetContent.locator('button.rounded-xl').nth(2).click();
     await page.waitForTimeout(1000);
 
-    // Verify R price in size button
-    await expect(page.locator('[data-testid="hh-size-R"]')).toContainText('₩25,900');
-
-    // Switch to L
-    await page.locator('[data-testid="hh-size-L"]').click();
-    await expect(page.locator('[data-testid="hh-size-L"]')).toContainText('₩29,900');
+    // L-only single fixed price (₩29,900) — no size selector anymore
+    await expect(page.locator('[data-testid="hh-add-to-cart"]')).toContainText('₩29,900');
 
     // Add to cart
     await page.locator('[data-testid="hh-add-to-cart"]').click();

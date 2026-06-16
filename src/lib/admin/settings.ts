@@ -1,5 +1,10 @@
 import { createAdminClient } from '@/lib/supabase-admin';
 import type { TelegramNotificationConfig } from '@/types/notifications';
+import {
+  type BusinessHours,
+  DEFAULT_BUSINESS_HOURS,
+  normalizeBusinessHours,
+} from '@/lib/business-hours';
 
 // ============================================================
 // store_settings — server-side DB ops
@@ -12,6 +17,7 @@ import type { TelegramNotificationConfig } from '@/types/notifications';
 // ============================================================
 
 const KEY_TELEGRAM = 'telegram_notifications';
+const KEY_BUSINESS_HOURS = 'business_hours';
 
 const DEFAULT_TELEGRAM_CONFIG: TelegramNotificationConfig = {
   chat_id: null,
@@ -50,4 +56,39 @@ export async function setTelegramConfig(
 
   if (error) throw new Error(error.message);
   return config;
+}
+
+// ============================================================
+// business_hours — 영업시간 / 임시휴무 설정
+// ============================================================
+
+export async function getBusinessHours(): Promise<BusinessHours> {
+  const supabase = createAdminClient();
+  if (!supabase) return { ...DEFAULT_BUSINESS_HOURS };
+
+  const { data, error } = await supabase
+    .from('store_settings')
+    .select('value')
+    .eq('key', KEY_BUSINESS_HOURS)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return { ...DEFAULT_BUSINESS_HOURS };
+
+  return normalizeBusinessHours(data.value as Partial<BusinessHours>);
+}
+
+export async function setBusinessHours(
+  hours: BusinessHours,
+): Promise<BusinessHours | null> {
+  const supabase = createAdminClient();
+  if (!supabase) return null;
+
+  const value = normalizeBusinessHours(hours);
+  const { error } = await supabase
+    .from('store_settings')
+    .upsert({ key: KEY_BUSINESS_HOURS, value }, { onConflict: 'key' });
+
+  if (error) throw new Error(error.message);
+  return value;
 }

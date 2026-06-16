@@ -92,6 +92,10 @@ export async function fetchPizzas(): Promise<Pizza[]> {
 
   return data.map((row) => {
     const prices: Array<{ size: string | null; price: number }> = row.menu_prices || [];
+    // L 단일 운영 — R 사이즈는 제거됨. price_R 은 호환을 위해 L 가격으로 폴백.
+    const priceL = prices.find((p) => p.size === 'L')?.price
+      || prices.find((p) => p.size === 'R')?.price
+      || 0;
     return {
       id: row.id,
       name_ko: row.name_ko || '',
@@ -101,8 +105,8 @@ export async function fetchPizzas(): Promise<Pizza[]> {
       desc_en: row.description_en || '',
       desc_zh: row.description_zh || '',
       desc_ja: row.description_ja || '',
-      price_R: prices.find((p) => p.size === 'R')?.price || 0,
-      price_L: prices.find((p) => p.size === 'L')?.price || 0,
+      price_R: priceL,
+      price_L: priceL,
       badge: row.badge || null,
       half_half: row.is_half_half_available || false,
       image_url: row.image_url || undefined,
@@ -271,6 +275,8 @@ export async function fetchHalfHalfConfig(): Promise<HalfHalfConfig> {
   if (error || !data) return getHalfHalfConfig();
 
   const prices: Array<{ size: string | null; price: number }> = data.menu_prices || [];
+  // 반반피자 L 단일 고정가 (₩29,900). R 은 제거됨.
+  const priceL = prices.find((p) => p.size === 'L')?.price || 29900;
   return {
     name_en: data.name_en || '',
     name_zh: data.name_zh || '',
@@ -278,8 +284,8 @@ export async function fetchHalfHalfConfig(): Promise<HalfHalfConfig> {
     description_en: data.description_en || '',
     description_zh: data.description_zh || '',
     description_ja: data.description_ja || '',
-    price_R: prices.find((p) => p.size === 'R')?.price || 25900,
-    price_L: prices.find((p) => p.size === 'L')?.price || 29900,
+    price_R: priceL,
+    price_L: priceL,
     available_pizzas: 'all',
     badge: data.badge || 'popular',
   };

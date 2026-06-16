@@ -2,7 +2,9 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-// next-intl hooks not directly used here but needed for child components
+import { useTranslations } from 'next-intl';
+import { useBusinessHours } from '@/hooks/useBusinessHours';
+import { splitHm } from '@/lib/business-hours';
 import { Header } from '@/components/layout/Header';
 import { CategoryNav } from '@/components/menu/CategoryNav';
 import { MenuCard } from '@/components/menu/MenuCard';
@@ -34,6 +36,12 @@ const HotelParamCapture = () => {
 };
 
 export default function HomePage() {
+  const tHours = useTranslations('businessHours');
+  const { state: hoursState } = useBusinessHours();
+  const isClosed = !hoursState.isOpen && hoursState.reason !== 'disabled';
+  const isManualClosed = hoursState.reason === 'closed_manual';
+  const countdown = hoursState.minutesUntilOpen != null ? splitHm(hoursState.minutesUntilOpen) : null;
+
   const [activeCategory, setActiveCategory] = useState('half_half');
   const [selectedItem, setSelectedItem] = useState<DetailItem | null>(null);
   // const [selectedSetMenu, setSelectedSetMenu] = useState<SetMenu | null>(null);
@@ -53,6 +61,16 @@ export default function HomePage() {
     fetchSauces().then(setSauces);
     // fetchSetMenus().then(setSetMenus);
   }, []);
+
+  // Hide category tabs that have no items (e.g. sides removed by owner).
+  const hiddenCategories = sides.length === 0 ? ['side'] : [];
+
+  // If the active tab becomes hidden, fall back to a visible one.
+  useEffect(() => {
+    if (sides.length === 0 && activeCategory === 'side') {
+      setActiveCategory('half_half');
+    }
+  }, [sides.length, activeCategory]);
 
   // Convert any menu item to DetailItem for the shared sheet
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -90,7 +108,28 @@ export default function HomePage() {
         <HotelParamCapture />
       </Suspense>
       <Header />
-      <CategoryNav activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+      <CategoryNav activeCategory={activeCategory} onCategoryChange={setActiveCategory} hiddenCategories={hiddenCategories} />
+
+      {/* Closed banner — does NOT block browsing, only informs */}
+      {isClosed && (
+        <div
+          role="status"
+          className="sticky top-[104px] z-30 bg-pizza-red text-white px-4 py-2.5 shadow-md"
+        >
+          <div className="max-w-[430px] mx-auto text-center">
+            {isManualClosed ? (
+              <p className="text-sm font-medium">{tHours('manualClosed')}</p>
+            ) : (
+              <>
+                <p className="text-sm font-medium">{tHours('closedBanner')}</p>
+                {countdown && (
+                  <p className="text-xs text-white/90 mt-0.5">{tHours('opensIn', countdown)}</p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <main className="max-w-[430px] mx-auto px-4 py-4">
         {/* Half & Half Section */}

@@ -126,6 +126,14 @@
     "browseSides": "Browse More Sides",
     "goToCart": "Go to Cart"
   },
+  "businessHours": {
+    "display": "Open daily 12:00–24:00",
+    "closedBanner": "🕛 We're closed now. Open daily 12:00–24:00.",
+    "opensIn": "Opens in {h}h {m}m",
+    "manualClosed": "🕛 Temporarily closed. Please check back soon.",
+    "closedAtCheckout": "Sorry, we just closed. Orders are available 12:00–24:00. Your cart is saved — please order after we reopen.",
+    "disabledTooltip": "Available during business hours (12:00–24:00)"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Something went wrong",

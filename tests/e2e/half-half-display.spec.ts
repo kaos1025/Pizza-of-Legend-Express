@@ -46,12 +46,7 @@ test.describe('Half & Half Pizza — Selection Names Display', () => {
     const rightLabel = await page.locator('[data-testid="half-right-label"]').innerText();
     const rightPizzaName = rightLabel.split('\n').pop()?.trim() || '';
 
-    // Scroll to and select L size
-    const sizeBtn = page.locator('[data-testid="hh-size-L"]');
-    await sizeBtn.scrollIntoViewIfNeeded();
-    await sizeBtn.click();
-    await page.waitForTimeout(300);
-
+    // L-only single fixed price — no size selector step anymore
     // Add to cart
     const addBtn = page.locator('[data-testid="hh-add-to-cart"]');
     await addBtn.scrollIntoViewIfNeeded();

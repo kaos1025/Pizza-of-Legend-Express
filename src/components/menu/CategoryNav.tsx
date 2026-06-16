@@ -14,16 +14,19 @@ const categories = [
 interface CategoryNavProps {
   activeCategory: string;
   onCategoryChange: (category: string) => void;
+  /** Category keys with no items — their tabs are hidden. */
+  hiddenCategories?: string[];
 }
 
-export const CategoryNav = ({ activeCategory, onCategoryChange }: CategoryNavProps) => {
+export const CategoryNav = ({ activeCategory, onCategoryChange, hiddenCategories = [] }: CategoryNavProps) => {
   const t = useTranslations('categories');
+  const visibleCategories = categories.filter((cat) => !hiddenCategories.includes(cat.key));
 
   return (
     <nav className="sticky top-[60px] z-40 bg-warm-white border-b border-gray-100">
       <div className="max-w-[430px] mx-auto overflow-x-auto scrollbar-hide">
         <div className="flex gap-1 px-3 py-2 min-w-max">
-          {categories.map((cat) => (
+          {visibleCategories.map((cat) => (
             <button
               key={cat.key}
               data-testid={`tab-${cat.key}`}

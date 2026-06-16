@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
           // Half & half: look up price from menu_prices for the half_half menu item
           // The half_half item has a known UUID prefix pattern, or we find it by category
           let halfHalfPrice = 0;
-          const size = item.size || 'R';
+          // L 단일 운영 — R 사이즈 제거됨. 반반은 항상 L 고정가로 조회.
+          const size = 'L';
 
           // Try by menu_item_id if provided
           if (item.menu_item_id || item.menuItemId) {
@@ -142,7 +143,8 @@ export async function POST(request: NextRequest) {
           const menuItemId = await resolveMenuItemId(supabase, item);
           if (menuItemId) {
             resolvedItem.menu_item_id = menuItemId;
-            const size = item.size || 'R';
+            // L 단일 운영 — R 사이즈 제거됨. 피자는 항상 L 가격으로 조회.
+            const size = 'L';
             const { data: priceRow } = await supabase
               .from('menu_prices')
               .select('price')
@@ -206,6 +208,19 @@ export async function POST(request: NextRequest) {
     const supaErr = err as any;
     const message = supaErr?.message || (err instanceof Error ? err.message : JSON.stringify(err));
     const code = supaErr?.code || '';
+
+    // 영업시간 차단 트리거(check_business_hours)가 reject한 경우 → 409 + 식별 코드.
+    // 클라이언트는 장바구니를 보존한 채 마감 안내를 표시한다.
+    if (typeof message === 'string' && message.includes('STORE_CLOSED')) {
+      const closedCode = message.includes('STORE_CLOSED_MANUAL')
+        ? 'STORE_CLOSED_MANUAL'
+        : 'STORE_CLOSED';
+      return NextResponse.json(
+        { error: closedCode, code: closedCode },
+        { status: 409 },
+      );
+    }
+
     console.error('[POST /api/orders] Error:', message, code);
     return NextResponse.json({ error: message, code, details: message }, { status: 500 });
   }

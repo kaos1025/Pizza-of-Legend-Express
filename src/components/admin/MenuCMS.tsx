@@ -13,6 +13,7 @@ export const MenuCMS = () => {
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [hasSideItems, setHasSideItems] = useState(true);
 
   const fetchItems = useCallback(async () => {
     try {
@@ -32,6 +33,29 @@ export const MenuCMS = () => {
     setLoading(true);
     fetchItems();
   }, [fetchItems]);
+
+  // 사이드 항목 존재 여부 확인 — 없으면 '사이드' 탭을 숨긴다. (사장님이 사이드 제거)
+  useEffect(() => {
+    let cancelled = false;
+    const checkSide = async () => {
+      try {
+        const res = await fetch('/api/admin/menu?category=side');
+        if (!res.ok) return;
+        const data = (await res.json()) as { items: MenuItem[] };
+        const has = Array.isArray(data.items) && data.items.length > 0;
+        if (cancelled) return;
+        setHasSideItems(has);
+        // 현재 사이드 탭을 보고 있는데 항목이 없어졌다면 피자 탭으로 복귀
+        if (!has) setCategory((c) => (c === 'side' ? 'pizza' : c));
+      } catch {
+        // 확인 실패 시 기본값(노출) 유지
+      }
+    };
+    void checkSide();
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
 
   const handleReorder = async (orderedIds: string[]) => {
     // Optimistic update
@@ -108,7 +132,11 @@ export const MenuCMS = () => {
         </button>
       </div>
 
-      <CategoryTabs activeCategory={category} onCategoryChange={setCategory} />
+      <CategoryTabs
+        activeCategory={category}
+        onCategoryChange={setCategory}
+        hiddenCategories={hasSideItems ? [] : ['side']}
+      />
 
       {loading ? (
         <div className="text-center py-10 text-gray-400">

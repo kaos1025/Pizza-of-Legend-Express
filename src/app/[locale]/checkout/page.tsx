@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/store';
+import { useBusinessHours } from '@/hooks/useBusinessHours';
 import { formatPrice } from '@/lib/utils';
 import type { Hotel, Locale } from '@/types/menu';
 
@@ -28,11 +29,14 @@ const DEFAULT_MESSENGER: Record<string, string> = {
 
 export default function CheckoutPage() {
   const t = useTranslations('checkout');
+  const tHours = useTranslations('businessHours');
   const locale = useLocale() as Locale;
   const router = useRouter();
   const items = useCartStore((state) => state.items);
   const totalAmount = useCartStore((state) => state.totalAmount);
   const clearCart = useCartStore((state) => state.clearCart);
+  const { state: hoursState } = useBusinessHours();
+  const isClosed = !hoursState.isOpen && hoursState.reason !== 'disabled';
 
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
   const [hotelId, setHotelId] = useState('');
@@ -92,6 +96,14 @@ export default function CheckoutPage() {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
+
+        // Store closed at submit time (409). Do NOT clear the cart — let the
+        // user order again after we reopen.
+        if (response.status === 409 && (errData.code === 'STORE_CLOSED' || errData.code === 'STORE_CLOSED_MANUAL')) {
+          alert(errData.code === 'STORE_CLOSED_MANUAL' ? tHours('manualClosed') : tHours('closedAtCheckout'));
+          return;
+        }
+
         const errMsg = typeof errData.details === 'string' ? errData.details
           : typeof errData.error === 'string' ? errData.error
           : JSON.stringify(errData);
@@ -219,10 +231,14 @@ export default function CheckoutPage() {
             <span className="font-bold text-pizza-dark">{t('total')}</span>
             <span className="text-xl font-bold text-pizza-red">{formatPrice(grandTotal)}</span>
           </div>
+          {isClosed && (
+            <p className="text-xs text-gray-400 text-center mb-2">{tHours('closedAtCheckout')}</p>
+          )}
           <Button
             data-testid="place-order"
             onClick={handlePlaceOrder}
-            disabled={!isValid || isSubmitting}
+            disabled={!isValid || isSubmitting || isClosed}
+            title={isClosed ? tHours('disabledTooltip') : undefined}
             className="w-full bg-pizza-red hover:bg-red-700 disabled:bg-gray-300 text-white font-semibold py-3 rounded-xl text-base"
           >
             {isSubmitting ? '...' : t('placeOrder')}

@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/lib/store';
+import { useBusinessHours } from '@/hooks/useBusinessHours';
 import type { Locale, CartItem } from '@/types/menu';
 
 export interface DetailItem {
@@ -35,15 +36,16 @@ interface MenuDetailSheetProps {
 
 export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps) => {
   const t = useTranslations('menu');
+  const tHours = useTranslations('businessHours');
   const locale = useLocale() as Locale;
   const addItem = useCartStore((state) => state.addItem);
+  const { state: hoursState } = useBusinessHours();
+  const isClosed = !hoursState.isOpen && hoursState.reason !== 'disabled';
 
-  const [size, setSize] = useState<'R' | 'L'>('R');
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
-    setSize('R');
     setQuantity(1);
     setAdded(false);
   }, [item?.id]);
@@ -55,18 +57,20 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
     || (item[`description_${locale}` as keyof DetailItem] as string)
     || item.desc_en || item.description_en || '';
 
-  const hasSizes = !!(item.price_R && item.price_L);
-  const unitPrice = hasSizes
-    ? (size === 'R' ? item.price_R! : item.price_L!)
+  // L-only operation: pizzas use price_L; everything else uses the single price.
+  const isPizza = item.type === 'pizza';
+  const unitPrice = isPizza
+    ? (item.price_L ?? item.price ?? 0)
     : (item.price || 0);
   const totalPrice = unitPrice * quantity;
 
   const handleAdd = () => {
+    if (isClosed) return;
     const cartItem: CartItem = {
-      id: `${item.type}-${item.id}-${hasSizes ? size : 'one'}-${Date.now()}`,
+      id: `${item.type}-${item.id}-${isPizza ? 'L' : 'one'}-${Date.now()}`,
       type: item.type,
       name: { en: item.name_en, zh: item.name_zh, ja: item.name_ja },
-      size: hasSizes ? size : undefined,
+      size: isPizza ? 'L' : undefined,
       quantity,
       unitPrice,
       image_url: item.image_url,
@@ -111,44 +115,8 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
           </SheetHeader>
           {desc && <p className="text-sm text-gray-500 mt-1 leading-relaxed">{desc}</p>}
 
-          {/* Size Selection */}
-          {hasSizes && (
-            <div className="flex gap-2 mt-5">
-              <button
-                data-testid="size-R"
-                onClick={() => setSize('R')}
-                aria-pressed={size === 'R'}
-                className={`flex-1 py-3.5 rounded-xl text-sm font-medium border-2 transition-all ${
-                  size === 'R'
-                    ? 'border-pizza-red bg-pizza-red text-white shadow-md'
-                    : 'border-gray-200 text-pizza-dark hover:border-pizza-red'
-                }`}
-              >
-                Regular (12&quot;)
-                <br />
-                <span className="font-bold text-base">{formatPrice(item.price_R!)}</span>
-              </button>
-              <button
-                data-testid="size-L"
-                onClick={() => setSize('L')}
-                aria-pressed={size === 'L'}
-                className={`flex-1 py-3.5 rounded-xl text-sm font-medium border-2 transition-all ${
-                  size === 'L'
-                    ? 'border-pizza-red bg-pizza-red text-white shadow-md'
-                    : 'border-gray-200 text-pizza-dark hover:border-pizza-red'
-                }`}
-              >
-                Large (14&quot;)
-                <br />
-                <span className="font-bold text-base">{formatPrice(item.price_L!)}</span>
-              </button>
-            </div>
-          )}
-
-          {/* Single price */}
-          {!hasSizes && (
-            <p className="text-pizza-red font-bold text-2xl mt-4">{formatPrice(item.price || 0)}</p>
-          )}
+          {/* Price — L-only for pizza, single price otherwise */}
+          <p className="text-pizza-red font-bold text-2xl mt-4">{formatPrice(unitPrice)}</p>
 
           {/* Quantity — larger touch targets */}
           <div className="flex items-center justify-center gap-5 mt-5">
@@ -174,13 +142,19 @@ export const MenuDetailSheet = ({ item, onClose, onAdded }: MenuDetailSheetProps
 
         {/* Fixed bottom Add to Cart — always visible with safe area */}
         <div className="px-4 pt-3 border-t border-gray-100 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.05)]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 20px), 20px)' }}>
+          {isClosed && (
+            <p className="text-xs text-gray-400 text-center mb-2">{tHours('disabledTooltip')}</p>
+          )}
           <button
             data-testid="add-to-cart"
             onClick={handleAdd}
-            disabled={added}
+            disabled={added || isClosed}
+            title={isClosed ? tHours('disabledTooltip') : undefined}
             className={`w-full h-14 rounded-2xl text-lg font-bold transition-all active:scale-[0.98] ${
               added
                 ? 'bg-success-green text-white'
+                : isClosed
+                ? 'bg-gray-300 text-white cursor-not-allowed'
                 : 'bg-pizza-red hover:bg-red-700 text-white shadow-lg shadow-pizza-red/30'
             }`}
           >

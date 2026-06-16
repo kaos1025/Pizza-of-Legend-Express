@@ -49,14 +49,9 @@ export const OrderSummary = ({ deliveryFee = 0 }: OrderSummaryProps) => {
                   <div className="flex-1 min-w-0">
                     <span className="truncate block">{name}</span>
                     <div className="flex items-center gap-1">
-                      {item.size && (
-                        <span className="text-gray-400 text-xs">
-                          {item.size === 'R' ? 'Regular' : item.size === 'L' ? 'Large' : 'Small'}
-                        </span>
-                      )}
+                      {/* L 단일 운영 — 사이즈 라벨 미표시 */}
                       {item.leftPizza && item.rightPizza && (
                         <>
-                          {item.size && <span className="text-gray-400 text-xs">·</span>}
                           <span className="text-orange-600 text-xs">
                             {(item.leftPizza[`name_${locale}` as keyof typeof item.leftPizza] as string) || item.leftPizza.name_en}
                             {' + '}

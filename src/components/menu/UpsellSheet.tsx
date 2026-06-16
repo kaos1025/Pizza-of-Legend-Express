@@ -11,8 +11,8 @@ import { formatPrice } from '@/lib/utils';
 import { getSides, getDrinks, getSauces, fetchSides, fetchDrinks, fetchSauces } from '@/lib/menu-data';
 import type { Locale, CartItem } from '@/types/menu';
 
-// Recommended item IDs — fallback names for JSON mode
-const RECOMMENDED_IDS = ['buffalo-wings-5', 'coke-500', 'garlic-sauce', 'carbonara'];
+// Max cross-sell items to show. Drink-focused now that sides may be empty.
+const MAX_RECOMMENDED = 4;
 
 interface UpsellSheetProps {
   isOpen: boolean;
@@ -30,28 +30,34 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
   const [allItems, setAllItems] = useState<any[]>([]);
 
   useEffect(() => {
+    // Tag each item with its source type so recommendations work regardless of
+    // the id scheme (static JSON uses slugs, Supabase uses UUIDs).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tag = (arr: any[], type: 'side' | 'drink' | 'sauce') =>
+      arr.map((it) => ({ ...it, _type: type }));
+
     // Start with sync JSON, upgrade to Supabase
-    const syncItems = [...getSides(), ...getDrinks(), ...getSauces()];
-    setAllItems(syncItems);
+    setAllItems([...tag(getSides(), 'side'), ...tag(getDrinks(), 'drink'), ...tag(getSauces(), 'sauce')]);
 
     Promise.all([fetchSides(), fetchDrinks(), fetchSauces()]).then(([s, d, sc]) => {
-      setAllItems([...s, ...d, ...sc]);
+      setAllItems([...tag(s, 'side'), ...tag(d, 'drink'), ...tag(sc, 'sauce')]);
     });
   }, []);
 
-  const recommended = RECOMMENDED_IDS
-    .map((id) => allItems.find((item) => item.id === id))
-    .filter(Boolean);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getType = (item: any): 'side' | 'drink' | 'sauce' => item._type || 'side';
+
+  // Drink-focused cross-sell: drinks first, then sauces, then anything else.
+  const recommended = [...allItems]
+    .filter((item) => getType(item) === 'drink' || getType(item) === 'sauce')
+    .sort((a, b) => (getType(a) === 'drink' ? 0 : 1) - (getType(b) === 'drink' ? 0 : 1))
+    .slice(0, MAX_RECOMMENDED);
+
+  // Whether any side-type item exists at all (sides may be removed by owner).
+  const hasSides = allItems.some((item) => getType(item) === 'side');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getName = (item: any) => item[`name_${locale}`] || item.name_en;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getType = (item: any): 'side' | 'drink' | 'sauce' => {
-    if (item.id?.includes('coke') || item.id?.includes('sprite')) return 'drink';
-    if (item.id?.includes('sauce') || item.id?.includes('parmesan') || item.id?.includes('jalapeno') || item.id?.includes('pickle') || item.id?.includes('hot-sauce')) return 'sauce';
-    return 'side';
-  };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getEmoji = (item: any) => {
@@ -100,10 +106,13 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
             <span className="text-lg font-bold text-success-green">{t('added')}</span>
           </div>
 
-          {/* Title */}
-          <h3 className="text-base font-semibold text-gray-800 mb-4">{t('title')}</h3>
+          {/* Title — only when there's something to cross-sell */}
+          {recommended.length > 0 && (
+            <h3 className="text-base font-semibold text-gray-800 mb-4">{t('title')}</h3>
+          )}
 
           {/* Recommended items horizontal scroll */}
+          {recommended.length > 0 && (
           <div className="flex gap-3 overflow-x-auto pb-5 -mx-1 px-1 scrollbar-hide">
             {recommended.map((item) => {
               const isAdded = addedIds.has(item!.id);
@@ -145,6 +154,7 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
               );
             })}
           </div>
+          )}
 
           {/* Action buttons — vertical, Go to Cart first */}
           <div className="flex flex-col gap-3">
@@ -158,16 +168,18 @@ export const UpsellSheet = ({ isOpen, onClose, onBrowseSides }: UpsellSheetProps
               <ShoppingCart className="w-4 h-4" />
               {t('goToCart')}
             </button>
-            <button
-              onClick={() => {
-                onClose();
-                onBrowseSides();
-              }}
-              className="w-full flex items-center justify-center gap-1 border border-gray-300 text-gray-700 text-base font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              {t('browseSides')}
-              <ChevronRight className="w-4 h-4" />
-            </button>
+            {hasSides && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onBrowseSides();
+                }}
+                className="w-full flex items-center justify-center gap-1 border border-gray-300 text-gray-700 text-base font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                {t('browseSides')}
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </SheetContent>

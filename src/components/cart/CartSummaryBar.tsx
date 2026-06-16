@@ -5,12 +5,16 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
+import { useBusinessHours } from '@/hooks/useBusinessHours';
 import { formatPrice } from '@/lib/utils';
 
 export const CartSummaryBar = () => {
   const t = useTranslations('cart');
+  const tHours = useTranslations('businessHours');
   const locale = useLocale();
   const router = useRouter();
+  const { state: hoursState } = useBusinessHours();
+  const isClosed = !hoursState.isOpen && hoursState.reason !== 'disabled';
   const items = useCartStore((state) => state.items);
   const totalAmount = useCartStore((state) => state.totalAmount);
   const totalItems = useCartStore((state) => state.totalItems);
@@ -30,6 +34,11 @@ export const CartSummaryBar = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+      {isClosed && (
+        <p className="max-w-[430px] mx-auto px-4 pt-2 text-[11px] text-center text-gray-400">
+          {tHours('disabledTooltip')}
+        </p>
+      )}
       <div className="max-w-[430px] mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className={`relative transition-transform ${bounce ? 'animate-bounce' : ''}`}>
@@ -52,7 +61,9 @@ export const CartSummaryBar = () => {
         <button
           data-testid="view-cart"
           onClick={() => router.push(`/${locale}/cart`)}
-          className="bg-pizza-red text-white h-12 px-7 rounded-full font-bold text-sm hover:bg-red-700 transition-colors active:scale-95 shadow-md shadow-pizza-red/20"
+          disabled={isClosed}
+          title={isClosed ? tHours('disabledTooltip') : undefined}
+          className="bg-pizza-red text-white h-12 px-7 rounded-full font-bold text-sm hover:bg-red-700 transition-colors active:scale-95 shadow-md shadow-pizza-red/20 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100"
           aria-label={`${t('viewCart')} - ${totalItems} items, ${formatPrice(totalAmount)}`}
         >
           {t('viewCart')}

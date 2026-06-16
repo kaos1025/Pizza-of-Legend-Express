@@ -23,16 +23,15 @@ test.describe('Price Validation', () => {
     if (await closeBtn.isVisible({ timeout: 500 }).catch(() => false)) await closeBtn.click();
   });
 
-  test('side prices are correct', async ({ page }) => {
+  test('side category tab is hidden when empty (sides removed)', async ({ page }) => {
     await page.goto('/en');
     await page.waitForLoadState('networkidle');
-
-    await page.locator('[data-testid="tab-side"]').click();
     await page.waitForTimeout(1000);
 
-    const cards = page.locator('[data-testid^="menu-card"]');
-    const count = await cards.count();
-    expect(count).toBeGreaterThanOrEqual(5);
+    // Sides were removed by the owner — the empty category tab must not render.
+    await expect(page.locator('[data-testid="tab-side"]')).toHaveCount(0);
+    // Drinks/sauces tabs remain available.
+    await expect(page.locator('[data-testid="tab-drink"]')).toBeVisible();
   });
 
   test('drink prices are correct', async ({ page }) => {
@@ -66,8 +65,7 @@ test.describe('Price Validation', () => {
     await page.locator('[data-testid="tab-half_half"]').click();
     await page.waitForTimeout(800);
 
-    // R and L prices should both be in the size buttons
-    await expect(page.locator('[data-testid="hh-size-R"]')).toContainText('₩25,900');
-    await expect(page.locator('[data-testid="hh-size-L"]')).toContainText('₩29,900');
+    // L-only single fixed price (₩29,900) shown on the add-to-cart button
+    await expect(page.locator('[data-testid="hh-add-to-cart"]')).toContainText('₩29,900');
   });
 });

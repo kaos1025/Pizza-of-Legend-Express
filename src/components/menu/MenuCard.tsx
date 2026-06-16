@@ -48,10 +48,13 @@ export const MenuCard = ({
     ? description[`desc_${locale}`] || description[`description_${locale}`] || description.desc_en || description.description_en
     : undefined;
 
+  // L 단일 운영 — 단일 가격만 표시 (R/L 병기 제거).
   const displayPrice = price
     ? formatPrice(price)
-    : priceR && priceL
-    ? `${formatPrice(priceR)} / ${formatPrice(priceL)}`
+    : priceL
+    ? formatPrice(priceL)
+    : priceR
+    ? formatPrice(priceR)
     : '';
 
   const hasImage = imageUrl && !imgError;

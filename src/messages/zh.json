@@ -126,6 +126,14 @@
     "browseSides": "查看更多小食",
     "goToCart": "去购物车"
   },
+  "businessHours": {
+    "display": "营业时间 每天 12:00–24:00",
+    "closedBanner": "🕛 现在已打烊。营业时间：每天 12:00–24:00。",
+    "opensIn": "{h}小时{m}分钟后营业",
+    "manualClosed": "🕛 暂停营业，请稍后再来。",
+    "closedAtCheckout": "抱歉，我们刚打烊。下单时间为 12:00–24:00。购物车已保存，请营业后下单。",
+    "disabledTooltip": "营业时间内可下单（12:00–24:00）"
+  },
   "common": {
     "loading": "加载中...",
     "error": "出了点问题",

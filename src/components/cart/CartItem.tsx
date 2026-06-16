@@ -26,7 +26,6 @@ export const CartItem = ({ item }: CartItemProps) => {
   const removeItem = useCartStore((state) => state.removeItem);
 
   const name = item.name[locale] || item.name.en;
-  const sizeLabel = item.size === 'R' ? 'Regular' : item.size === 'L' ? 'Large' : item.size === 'S' ? 'Small' : '';
 
   // For half_half, show left pizza image; for set_menu, show selected pizza image
   const imageUrl = item.image_url
@@ -62,7 +61,6 @@ export const CartItem = ({ item }: CartItemProps) => {
 
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-sm text-pizza-dark truncate">{name}</h4>
-        {sizeLabel && <p className="text-xs text-gray-400">{sizeLabel}</p>}
 
         {/* Half-half sub-text */}
         {isHalfHalf && item.leftPizza && item.rightPizza && (

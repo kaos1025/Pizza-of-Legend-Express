@@ -4,15 +4,19 @@ import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Clock } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { useBusinessHours } from '@/hooks/useBusinessHours';
 import { getOrderHistory } from '@/lib/order-history';
 import type { SavedOrder } from '@/lib/order-history';
 
 export const Header = () => {
   const t = useTranslations('brand');
+  const tHours = useTranslations('businessHours');
   const locale = useLocale();
   const router = useRouter();
+  const { state: hoursState } = useBusinessHours();
+  const showHours = hoursState.reason !== 'disabled';
   const [lastOrder, setLastOrder] = useState<SavedOrder | null>(null);
 
   useEffect(() => {
@@ -37,6 +41,12 @@ export const Header = () => {
           <div>
             <h1 className="text-lg font-bold leading-tight">{t('name')}</h1>
             <p className="text-xs text-gray-300">{t('tagline')}</p>
+            {showHours && (
+              <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-gray-300">
+                <Clock className="w-3 h-3" />
+                {tHours('display')}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
