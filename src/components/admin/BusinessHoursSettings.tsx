@@ -229,7 +229,7 @@ export const BusinessHoursSettings = () => {
                 onChange={(e) => setConfig((c) => ({ ...c, enabled: e.target.checked }))}
                 className="w-4 h-4 accent-pizza-red"
               />
-              영업시간 차단 사용
+              영업시간 외 주문 차단
             </label>
             <p className="text-xs text-gray-500 -mt-2 pl-6">
               끄면 영업시간과 무관하게 24시간 주문이 허용됩니다.
