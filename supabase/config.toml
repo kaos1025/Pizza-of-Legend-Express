@@ -14,3 +14,4 @@ project_id = "sdvcaisxutdnagncxcgd"
 #   체크로 인증을 대신한다.
 [functions.send-order-push]
 verify_jwt = false
+

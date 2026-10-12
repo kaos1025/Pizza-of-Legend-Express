@@ -1,235 +1,94 @@
-# VPS 이전 런북 — Supabase(호스티드) + Vercel → VPS 올인원
+# 인프라 구성 — Vercel(앱) + VPS self-hosted Supabase
 
-> 작성: 2026-10-12. 대상: Docker 가능 / RAM 4GB+ VPS.
-> 방식: **self-hosted Supabase** (코드 변경 최소화 — Realtime·Storage·트리거·Edge Function 전부 유지)
+> 2026-10-12 전환 완료. 비용 문제로 호스티드 Supabase 를 접고 DB/Realtime/Storage/Edge Function 을
+> VPS(Hostinger, 쿠알라룸푸르, Ubuntu 24.04, RAM 8GB)의 self-hosted Supabase 로 이전했다.
+> **앱은 Vercel 에 그대로** 둔다 — 도메인(pizza-of-legend-express.vercel.app)이 유지되어
+> 호텔 QR·관리자 push 구독·PWA 설치가 전부 보존되기 때문.
 
-## 아키텍처 (이전 후)
+## 아키텍처
 
 ```
-[고객/관리자 브라우저]
-   │ https://APP_DOMAIN  ────────────┐
-   │ https://API_DOMAIN (REST/WS)    │
-   ▼                                 ▼
-┌─────────────────── VPS ─────────────────────┐
-│  Caddy (80/443, TLS 자동)                    │
-│   ├─ APP_DOMAIN → app:3000 (Next.js)        │
-│   └─ API_DOMAIN → supabase-kong:8000        │
-│                     ├─ rest (PostgREST)      │
-│                     ├─ realtime (WebSocket)  │
-│                     ├─ storage (menu-images) │
-│                     ├─ functions (send-order-push)
-│                     └─ studio (관리 대시보드) │
-│  Postgres (db 컨테이너, 트리거/웹훅 포함)      │
-└─────────────────────────────────────────────┘
+[고객/관리자]
+  ├─ https://pizza-of-legend-express.vercel.app   (Next.js, Vercel, 함수 리전 sin1)
+  └─ https://pizza-api.jullyssy.shop              (Supabase API: REST/Realtime/Storage/Functions)
+        │  Cloudflare (Proxied A → 76.13.187.38, Origin Rule 443→8443, SSL Full)
+        ▼
+┌────────────── VPS 76.13.187.38 ──────────────┐
+│ pizza-edge   caddy:2, :8443, tls internal     │
+│    └→ api-gw (Envoy) :8000(127.0.0.1:8010)    │
+│         ├ rest(PostgREST) ├ realtime          │
+│         ├ storage(+imgproxy) ├ auth ├ studio  │
+│         └ functions(send-order-push)          │
+│ db (Postgres 17.6) — 트리거/웹훅 포함          │
+│ supavisor 127.0.0.1:5432/6543                 │
+└───────────────────────────────────────────────┘
 ```
 
-- 도메인 2개 필요: 앱용(`APP_DOMAIN`) + Supabase API용(`API_DOMAIN`, 보통 `api.` 서브도메인)
-- **앱 도메인은 기존과 동일하게 유지**할 것 — PWA 설치·Web Push 구독이 도메인에 묶여 있어서 도메인이 바뀌면 전부 무효가 된다.
+- 설치 위치: `/srv/pizza/supabase` (upstream `supabase/docker` **self-hosted/v0.8.2** 기반, `setup.sh`로 부트스트랩)
+- 오버레이: `docker-compose.pizza.yml` (게이트웨이·pooler 루프백 바인딩, pizza-edge, functions 시크릿 주입)
+- `.env` 에 모든 시크릿 (JWT legacy 키 사용 — 앱/함수 인증은 legacy `ANON_KEY`/`SERVICE_ROLE_KEY`)
+- **jullyssy-* 스택/호스트 Caddy(80/443)와 완전 분리** — 피자는 8443만 사용, 그쪽 인프라 건드리지 말 것
 
-## 0. 사전 준비 체크리스트
+## Vercel 쪽 설정
 
-- [ ] VPS: Docker + Docker Compose v2 설치, 방화벽은 22/80/443만 오픈
-- [ ] swap 2GB 설정 권장 (Next 빌드 + Supabase 스택 동시 가동 시 메모리 피크 대비)
-- [ ] DNS: `APP_DOMAIN`, `API_DOMAIN` A 레코드 → VPS IP. **전환 1~2일 전 TTL을 300초로 낮춰둘 것**
-- [ ] 기존 Supabase에서 챙겨둘 것:
-  - DB 연결 문자열 (Dashboard → Connect → **Session pooler**, IPv4용)
-  - `SUPABASE_SERVICE_ROLE_KEY` (sb_secret_*)
-  - Edge Function 시크릿: `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`, `TELEGRAM_BOT_TOKEN`
-  - ⚠️ **VAPID 키는 반드시 동일한 값을 그대로 이전** — 새로 만들면 기존 관리자 push 구독 전부 무효
-- [ ] 전환 작업은 주문 없는 시간대(영업 시작 12:00 이전 오전)에
-
-## 1. Self-hosted Supabase 설치
-
-```bash
-# VPS 에서
-git clone --depth 1 https://github.com/supabase/supabase /opt/supabase-src
-mkdir -p /opt/supabase-docker
-cp -r /opt/supabase-src/docker/* /opt/supabase-docker/
-cp /opt/supabase-src/docker/.env.example /opt/supabase-docker/.env
-cd /opt/supabase-docker
-```
-
-`.env` 필수 수정:
-
-| 변수 | 값 |
+| 항목 | 값 |
 |------|-----|
-| `POSTGRES_PASSWORD` | 강한 랜덤값 |
-| `JWT_SECRET` | 40자+ 랜덤값 |
-| `ANON_KEY` / `SERVICE_ROLE_KEY` | **JWT_SECRET 으로 생성한 JWT** — 공식 문서의 API 키 생성기 사용: https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys |
-| `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` | Studio 접속용 (API_DOMAIN 루트가 Studio) |
-| `SITE_URL` | `https://APP_DOMAIN` |
-| `API_EXTERNAL_URL` | `https://API_DOMAIN` |
-| `SUPABASE_PUBLIC_URL` | `https://API_DOMAIN` |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://pizza-api.jullyssy.shop` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | VPS `.env` 의 `ANON_KEY` (legacy JWT) |
+| `SUPABASE_SERVICE_ROLE_KEY` | VPS `.env` 의 `SERVICE_ROLE_KEY` (legacy JWT) |
+| 함수 리전 | `sin1` (VPS 와 인접) |
+| VAPID/ADMIN/TELEGRAM env | 기존 값 유지 |
 
-참고:
-- self-hosted 는 새 키 포맷(sb_publishable/sb_secret)이 아니라 **JWT 기반 legacy 키**를 쓴다. `supabase-js` 는 어느 쪽이든 동일하게 동작하고, Edge Function 의 수동 Bearer 비교도 그대로 동작한다.
-- Auth(이메일/SMTP) 설정은 이 프로젝트가 No Auth 라 무시해도 된다.
-- Kong 호스트 포트(8000/8443)는 Caddy 가 컨테이너 네트워크로 직접 붙으므로 외부 노출 불필요 → `docker-compose.yml` 의 kong ports 를 `127.0.0.1:8000:8000` 으로 제한하거나 방화벽으로 차단.
-- (선택, RAM 절약) `analytics`·`vector` 서비스는 Studio 로그 뷰어용이라 중지해도 운영에 지장 없음. `imgproxy` 도 앱이 next/image 로 최적화하므로 중지 가능.
+`next.config.mjs` 가 `NEXT_PUBLIC_SUPABASE_URL` 호스트를 `next/image` 허용 목록에 자동 추가하므로
+이미지 도메인 설정은 env 만 바꾸면 따라온다.
 
-Edge Function 환경 주입 — 레포의 `deploy/supabase-docker-compose.override.yml` 를 복사:
+## 이전 과정에서 확정된 사실 (중요)
 
-```bash
-cp <repo>/deploy/supabase-docker-compose.override.yml /opt/supabase-docker/docker-compose.override.yml
-# .env 에 추가: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, TELEGRAM_BOT_TOKEN(선택), TELEGRAM_CHAT_ID(선택)
-```
+1. **레포의 `supabase/schema.sql`·migration 파일은 실 운영 스키마와 다른 계보** (실 DB엔 `menu_prices`,
+   `store_settings`, `set_menu_components`, `daily_settlements`, sales 뷰가 있고 `menu_categories` 등은 없음).
+   실제 스키마 스냅샷: **`supabase/schema_vps_snapshot.sql`** (2026-10-12 기준, 이게 진실).
+2. 주문 알림: `orders` AFTER INSERT 트리거 `trg_send_order_push` → pg_net →
+   `http://api-gw:8000/functions/v1/send-order-push` (내부 경로, Cloudflare 무관).
+   호스티드 시절 대시보드 웹훅(`notify-admin-on-new-order`)은 중복이라 **제거함**.
+3. 영업시간 차단: `trg_check_business_hours` (BEFORE INSERT) — 덤프로 함께 이전됨.
+   데이터 복원 시엔 트리거 때문에 `pg_dump --disable-triggers` + `supabase_admin` 권한 필요.
+4. Web Push: VAPID 키·앱 도메인이 유지되어 **기존 관리자 구독 5건 그대로 유효** (이전 후 실발송 검증 완료).
+5. pizza-edge Caddyfile 에 `auto_https off` 금지 — `tls internal` 발급까지 꺼져서 TLS 핸드셰이크가 죽는다.
+6. 비밀번호에 `@` 등 특수문자가 있으면 연결 URL 대신 `PGPASSWORD` + `-h/-U/-d` 파라미터 사용.
 
-Edge Function 소스 복사:
-
-```bash
-cp -r <repo>/supabase/functions/send-order-push /opt/supabase-docker/volumes/functions/
-```
-
-기동:
+## 운영
 
 ```bash
-docker compose pull
-docker compose up -d
-docker compose ps   # 전부 healthy 확인
+ssh deploy@76.13.187.38
+cd /srv/pizza/supabase
+
+sh run.sh status            # 상태
+sh run.sh logs functions    # 특정 서비스 로그
+sh run.sh restart <svc>     # 재시작
+sh update.sh --dry-run      # 업데이트 미리보기 (백업 먼저!)
 ```
 
-## 2. DB 스키마 + 데이터 이전
+- **백업**: 매일 04:00 cron (`/etc/cron.d/pizza-backup` → `/srv/pizza/backup.sh`)
+  → `/srv/pizza-backups/pizza-db-YYYYMMDD.dump`(pg_dump -Fc) + `pizza-storage-*.tar.gz`, 7일 보관.
+  주기적으로 VPS 외부로도 복사할 것. 복구: `pg_restore -U supabase_admin -d postgres --clean <dump>`
+- **Studio**: `https://pizza-api.jullyssy.shop` 루트 (basic auth: `.env` 의 DASHBOARD_USERNAME/PASSWORD)
+- **Edge Function 수정 시**: `volumes/functions/send-order-push/` 교체 후 `sh run.sh restart functions`
+- **방화벽**: ufw — 22, 8443 만 오픈 (8443은 Cloudflare 경유 전용)
 
-**스키마는 레포 SQL 을 진실 원천으로 새로 구성**하고, 데이터만 기존 프로젝트에서 복사한다 (dump 전체 복원보다 충돌이 적고 깔끔).
+## 롤백 (비상)
 
-### 2-1. 스키마 구성 (레포 SQL 순서대로)
+1. Vercel env 3개를 기존 호스티드 값으로 되돌리고 Redeploy
+2. 호스티드 Supabase 프로젝트 resume (pause 상태였다면)
+3. VPS 전환 후 쌓인 주문(`orders`/`order_items`)은 수동 반영 필요
 
-```bash
-cd /opt/supabase-docker
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < <repo>/supabase/schema.sql
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < <repo>/supabase/migration_guesthouse_split.sql
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < <repo>/supabase/migration_feedback_update.sql
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < <repo>/supabase/migration_admin_push_subscriptions.sql
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < <repo>/supabase/migration_telegram_notifications_config.sql
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < <repo>/supabase/migration_business_hours_and_size.sql
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < <repo>/supabase/storage-policies.sql
-```
+## 정리 일정
 
-> 마이그레이션 실행 순서는 파일 작성 순서 기준. 이미 `schema.sql` 에 반영된 내용과 겹치면 해당 파일은 건너뛴다 (레포 히스토리 확인).
+- [ ] 안정 운영 2주 확인 후 호스티드 Supabase 프로젝트 삭제 (그 전까지 pause)
+- [ ] 호스티드 DB 비밀번호가 채팅/스크립트에 노출됐으므로 pause 전 리셋 권장
+- [x] Vercel 은 유지 (무료 플랜) — 삭제하지 말 것
 
-### 2-2. 데이터 복사 (기존 → 신규)
+## (참고) 앱까지 VPS 로 옮기고 싶어질 때
 
-로컬 PC 또는 VPS 에서 (pg_dump 16+ 필요):
-
-```bash
-# 기존 호스티드에서 데이터만 dump (연결 문자열은 Session pooler 용)
-pg_dump "postgresql://postgres.<ref>:<pw>@<pooler-host>:5432/postgres" \
-  --data-only --schema=public \
-  --no-owner --no-privileges \
-  -f data.sql
-```
-
-⚠️ **복원 전 `data.sql` 맨 위에 다음 한 줄을 추가**할 것:
-
-```sql
-SET session_replication_role = replica;
-```
-
-이유: `check_business_hours` 트리거(BEFORE INSERT on orders)가 살아 있으면 **영업시간 외에 복원을 돌릴 때 기존 주문 INSERT 가 전부 차단**된다. `replica` 모드는 복원 세션에서만 트리거를 끈다.
-
-```bash
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < data.sql
-```
-
-### 2-3. 복원 후처리
-
-```bash
-docker compose exec -T db psql -U postgres -d postgres < <repo>/deploy/sql/post-restore.sql
-```
-
-(Realtime publication 등록 + pg_net 설치 + 트리거 존재 검증)
-
-### 2-4. 주문 알림 웹훅 트리거
-
-`deploy/sql/webhook-send-order-push.sql` 에서 `__API_DOMAIN__`, `__SERVICE_ROLE_KEY__` 치환 후:
-
-```bash
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < webhook-send-order-push.sql
-```
-
-(호스티드 Dashboard 의 "Database Webhooks" 를 pg_net 트리거로 대체한 것)
-
-## 3. Storage 이전 (메뉴 이미지)
-
-로컬 PC(레포 루트)에서:
-
-```powershell
-$env:OLD_SUPABASE_URL="https://<ref>.supabase.co"
-$env:OLD_SERVICE_ROLE_KEY="sb_secret_..."
-$env:NEW_SUPABASE_URL="https://API_DOMAIN"
-$env:NEW_SERVICE_ROLE_KEY="<self-hosted SERVICE_ROLE_KEY>"
-node deploy/scripts/migrate-storage.mjs
-```
-
-그다음 DB 의 이미지 URL 교정 — `deploy/sql/fix-image-urls.sql` 치환 후 실행.
-
-## 4. Edge Function 동작 확인
-
-```bash
-curl -X POST https://API_DOMAIN/functions/v1/send-order-push \
-  -H "Authorization: Bearer <self-hosted SERVICE_ROLE_KEY>" \
-  -H "Content-Type: application/json" \
-  -d '{"test":true}'
-```
-
-관리자 기기에 push + (설정 시) 텔레그램 수신 확인. 실패 시: `docker compose logs functions`
-
-> 레포 `supabase/config.toml` 의 `verify_jwt=false` 는 호스티드/CLI 용 설정. self-hosted 에서는 override 파일의 `VERIFY_JWT: "false"` 가 같은 역할을 한다.
-
-## 5. 앱 배포
-
-```bash
-# VPS 에서
-git clone <repo-url> /opt/pizza && cd /opt/pizza
-cp deploy/env.app.example deploy/.env.app
-# 값 채우기 (env.app.example 의 주석 참고)
-
-# supabase compose 네트워크 이름 확인 — 다르면 deploy/docker-compose.app.yml 의
-# networks.supabase.name 수정 (기본: <디렉토리명>_default)
-docker network ls | grep supabase
-
-docker compose -f deploy/docker-compose.app.yml --env-file deploy/.env.app up -d --build
-```
-
-- `NEXT_PUBLIC_*` 값을 바꾸면 **이미지 재빌드 필요** (빌드 시점에 번들에 인라인됨): `up -d --build`
-- Caddy 가 TLS 를 자동 발급하므로 DNS 가 VPS 를 가리킨 뒤에 기동해야 발급이 성공한다.
-
-## 6. DNS 전환 + 검증
-
-API_DOMAIN 은 신규 레코드라 먼저 연결해 검증하고, APP_DOMAIN 만 마지막에 Vercel → VPS 로 전환.
-
-체크리스트 (전환 직후 실제 기기로):
-
-- [ ] 메뉴 로드 (REST) + 메뉴 이미지 표시 (Storage URL 교정 확인)
-- [ ] 주문 생성 → 주문번호 `POL-YYYYMMDD-NNN` 발급
-- [ ] 관리자 관제센터에 신규 주문 **실시간** 표시 (Realtime)
-- [ ] 관리자 Web Push + 텔레그램 알림 수신 (웹훅 트리거)
-- [ ] 고객 주문추적 화면에서 상태 변경 실시간 반영
-- [ ] 영업시간 외 주문 시 409 + 장바구니 보존 (`check_business_hours`)
-- [ ] 관리자 메뉴 이미지 업로드 (Storage 쓰기)
-- [ ] PWA 설치 유지 / sw.js 정상 등록 (브라우저 DevTools → Application)
-- [ ] 임시휴무(manual_closed) 토글 동작
-
-## 7. 운영: 백업
-
-호스티드 시절의 자동 백업이 사라지므로 **cron 백업 필수**:
-
-```bash
-# /etc/cron.d/pizza-backup — 매일 04:00, 7일 보관
-0 4 * * * root docker exec supabase-db pg_dump -U postgres -Fc postgres > /backups/pizza-$(date +\%Y\%m\%d).dump && find /backups -name "pizza-*.dump" -mtime +7 -delete
-```
-
-- `/backups` 는 VPS 외부(로컬 PC rclone/rsync, 오브젝트 스토리지 등)로도 주기 복사 권장
-- 이미지 원본: `/opt/supabase-docker/volumes/storage` 디렉토리도 백업 대상에 포함
-- 복구 리허설을 최소 1회 해볼 것: `pg_restore -U postgres -d postgres --clean <dump>`
-
-## 8. 정리 & 롤백
-
-**정리** (안정 확인 후):
-- 기존 Supabase 프로젝트: 바로 삭제하지 말고 **2주간 pause** → 문제 없으면 삭제
-- Vercel 프로젝트: 도메인 연결 해제 후 삭제
-
-**롤백** (전환 당일 문제 발생 시):
-1. APP_DOMAIN DNS 를 Vercel 로 복귀
-2. 기존 Supabase 프로젝트 resume (pause 상태였다면)
-3. ⚠️ 전환 후 VPS 에 쌓인 주문은 기존 DB 에 없다 — `orders`/`order_items` 를 수동 반영
+`deploy/Dockerfile`, `deploy/docker-compose.app.yml`, `deploy/Caddyfile`, `deploy/env.app.example` 은
+앱을 VPS 에서 돌리는 시나리오용으로 남겨둔 것. 단 그 경우 도메인이 바뀌므로 QR 재배포·push 재구독 필요.
+`deploy/sql/`, `deploy/scripts/` 는 호스티드→VPS 이전 당시 사용한 도구 (완료됨, 기록용).
