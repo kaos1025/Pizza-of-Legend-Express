@@ -70,7 +70,11 @@ sh update.sh --dry-run      # 업데이트 미리보기 (백업 먼저!)
 
 - **백업**: 매일 04:00 cron (`/etc/cron.d/pizza-backup` → `/srv/pizza/backup.sh`)
   → `/srv/pizza-backups/pizza-db-YYYYMMDD.dump`(pg_dump -Fc) + `pizza-storage-*.tar.gz`, 7일 보관.
-  주기적으로 VPS 외부로도 복사할 것. 복구: `pg_restore -U supabase_admin -d postgres --clean <dump>`
+  - **검증**: PowerShell 에서 `Get-Content deploy/scripts/vps-backup-check.sh -Raw | ssh deploy@76.13.187.38 "tr -d '\r' | bash -s"`
+    — 최신 dump 를 임시 DB 에 복원해 public 테이블 행 수를 운영 DB 와 나란히 출력하고 임시 DB 를 지운다 (백업이 없으면 먼저 생성).
+  - **오프사이트 사본**: `deploy/scripts/pull-backup.ps1` — 최신 dump + storage tar 를 로컬 PC `F:\juji\pizza-backups` 로 scp.
+    `-Register` 스위치로 실행하면 작업 스케줄러에 매일 09:00 작업(PizzaBackupPull)을 등록한다 (PC 가 꺼져 있었으면 다음 기회에 실행).
+  - **복구**: `pg_restore -U supabase_admin -d postgres --clean <dump>`
 - **Studio**: `https://pizza-api.jullyssy.shop` 루트 (basic auth: `.env` 의 DASHBOARD_USERNAME/PASSWORD)
 - **Edge Function 수정 시**: `volumes/functions/send-order-push/` 교체 후 `sh run.sh restart functions`
 - **방화벽**: ufw — 22, 8443 만 오픈 (8443은 Cloudflare 경유 전용)
@@ -81,14 +85,21 @@ sh update.sh --dry-run      # 업데이트 미리보기 (백업 먼저!)
 2. 호스티드 Supabase 프로젝트 resume (pause 상태였다면)
 3. VPS 전환 후 쌓인 주문(`orders`/`order_items`)은 수동 반영 필요
 
+> 호스티드 프로젝트를 삭제한 뒤에는 이 롤백은 불가능하다. 그 이후의 복구 수단은 `/srv/pizza-backups` 또는 로컬 오프사이트 사본의 dump 를 `pg_restore` 하는 것뿐이다.
+
 ## 정리 일정
 
-- [ ] 안정 운영 2주 확인 후 호스티드 Supabase 프로젝트 삭제 (그 전까지 pause)
-- [ ] 호스티드 DB 비밀번호가 채팅/스크립트에 노출됐으므로 pause 전 리셋 권장
+2026-10-12 결정: 사이트가 당분간 미사용 상태라 "안정 운영 2주" 대기 없이 바로 마무리한다.
+
+- [ ] VPS 백업 복구 검증 (`vps-backup-check.sh`) + 오프사이트 사본 1회 확보 (`pull-backup.ps1`)
+- [ ] `.env.local` 을 VPS 키로 교체 (`deploy/scripts/sync-env-local.ps1`) — 호스티드 pause 전에. 로컬 dev/E2E 가 아직 호스티드를 보고 있음
+- [ ] 호스티드 Supabase: DB 비밀번호 리셋(채팅/스크립트에 노출됨) → pause → 프로젝트 삭제.
+      유료 플랜이면 pause 만으로는 과금이 멈추지 않는다 — org 플랜을 Free 로 내리거나 구독을 취소할 것
 - [x] Vercel 은 유지 (무료 플랜) — 삭제하지 말 것
 
 ## (참고) 앱까지 VPS 로 옮기고 싶어질 때
 
 `deploy/Dockerfile`, `deploy/docker-compose.app.yml`, `deploy/Caddyfile`, `deploy/env.app.example` 은
 앱을 VPS 에서 돌리는 시나리오용으로 남겨둔 것. 단 그 경우 도메인이 바뀌므로 QR 재배포·push 재구독 필요.
-`deploy/sql/`, `deploy/scripts/` 는 호스티드→VPS 이전 당시 사용한 도구 (완료됨, 기록용).
+`deploy/sql/` 와 `deploy/scripts/migrate-storage.mjs` 는 호스티드→VPS 이전 당시 도구 (완료됨, 기록용).
+`deploy/scripts/` 의 나머지(`pull-backup.ps1`, `vps-backup-check.sh`, `sync-env-local.ps1`)는 운영용이다.
