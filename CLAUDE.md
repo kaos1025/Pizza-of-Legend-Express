@@ -19,9 +19,9 @@
 - **Styling**: Tailwind CSS + shadcn/ui
 - **i18n**: next-intl (en, zh, ja)
 - **State**: Zustand (장바구니, UI 상태)
-- **DB**: Supabase (Postgres + Realtime + Storage)
+- **DB**: Supabase self-hosted on VPS (Postgres + Realtime + Storage + Edge Functions) — 인프라 `deploy/README.md`, 스키마 진실 `supabase/schema_vps_snapshot.sql`
 - **PWA**: next-pwa
-- **Deploy**: Vercel
+- **Deploy**: Vercel (앱) + VPS (self-hosted Supabase)
 
 ---
 
@@ -211,8 +211,8 @@ npm run build
 # 린트
 npm run lint
 
-# Supabase 스키마 적용
-# Supabase Dashboard > SQL Editor에서 01_supabase_schema.sql 실행
+# 스키마: 진실 원천은 supabase/schema_vps_snapshot.sql (VPS pg_dump)
+# 변경·재스냅샷 절차는 supabase/README.md (커밋 전 service role 키 치환 필수)
 ```
 
 ---
@@ -220,9 +220,9 @@ npm run lint
 ## 환경변수 (.env.local)
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+NEXT_PUBLIC_SUPABASE_URL=https://pizza-api.jullyssy.shop
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<VPS /srv/pizza/supabase/.env 의 ANON_KEY (legacy JWT)>
+SUPABASE_SERVICE_ROLE_KEY=<VPS /srv/pizza/supabase/.env 의 SERVICE_ROLE_KEY (legacy JWT)>
 ```
 
 ---

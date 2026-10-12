@@ -2,63 +2,55 @@
 
 신규 주문(`orders` INSERT)을 감지하면 활성 Admin 디바이스 전체에 Web Push 알림을 발사합니다.
 
+> 2026-10-12 부터 VPS self-hosted Supabase 에서 돌아간다. 배포·시크릿·로그 모두 CLI 가 아니라 VPS 에서 다룬다.
+> 인프라 전반은 `deploy/README.md` 참고.
+
 ## 호출 경로
 
-1. **Production**: Supabase Database Webhook → 본 함수
+1. **Production**: `orders` AFTER INSERT 트리거 `trg_send_order_push` → `notify_send_order_push()` → pg_net
+   → `http://api-gw:8000/functions/v1/send-order-push` (VPS 내부 경로, Cloudflare 를 거치지 않음)
 2. **테스트**: `POST { "test": true }` (Next.js `/api/admin/push/test` 또는 직접 curl)
+
+트리거 함수가 `apikey` + `Authorization: Bearer <SERVICE_ROLE_KEY>` 헤더를 직접 넣는다.
+함수 내부에서는 이 헤더가 `Bearer ${SERVICE_ROLE_KEY}` 와 정확히 일치하는지 검증한다 (게이트웨이 JWT 검증은 꺼져 있음).
+트리거 정의는 `supabase/schema_vps_snapshot.sql` 참고. 호스티드 시절의 Dashboard Database Webhook 은 제거됐다.
 
 ## 알림 채널
 
 | 채널 | 조건 | 트리거 |
 |---|---|---|
 | Web Push (admin 디바이스) | `admin_push_subscriptions.is_active = true` 행 존재 | 항상 |
-| Telegram 봇 | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` Secrets 설정 시 | 항상 (Push 와 병렬) |
+| Telegram 봇 | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` 설정 시 | 항상 (Push 와 병렬) |
 
-Telegram secrets 미설정 시 silent skip — Push 만 동작. 함수 응답의 `telegram` 필드로 발사 결과 확인 가능.
+Telegram 미설정 시 silent skip — Push 만 동작. 함수 응답의 `telegram` 필드로 발사 결과 확인 가능.
 
-## 배포
+## 배포 (VPS)
 
 ```bash
-# 함수 배포
-supabase functions deploy send-order-push
+# 로컬에서 소스 복사
+scp -r supabase/functions/send-order-push deploy@76.13.187.38:/srv/pizza/supabase/volumes/functions/
 
-# Secrets 등록 (최초 1회)
-supabase secrets set VAPID_PUBLIC_KEY="<.env.local 의 NEXT_PUBLIC_VAPID_PUBLIC_KEY>"
-supabase secrets set VAPID_PRIVATE_KEY="<.env.local 의 VAPID_PRIVATE_KEY>"
-supabase secrets set VAPID_SUBJECT="<.env.local 의 VAPID_SUBJECT>"
+# VPS 에서 재시작
+ssh deploy@76.13.187.38 'cd /srv/pizza/supabase && sh run.sh restart functions'
 ```
 
-> `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` 는 Supabase 가 자동 주입합니다.
+## 환경변수 (VPS `/srv/pizza/supabase/.env`)
 
-## Database Webhook 설정
-
-Supabase Dashboard → Database → Webhooks → "Create a new hook"
-
-| 항목 | 값 |
+| 변수 | 비고 |
 |---|---|
-| Name | `notify-admin-on-new-order` |
-| Table | `orders` |
-| Events | ✅ `Insert` (나머지 OFF) |
-| Type | `Supabase Edge Functions` |
-| Edge Function | `send-order-push` |
-| HTTP Method | `POST` |
-| HTTP Headers | `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>` + `Content-Type: application/json` |
-| HTTP Params | (비움) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | 스택이 자동 주입 |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | 앱(Vercel)과 **동일한 값**이어야 기존 구독이 유효하다 |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | 선택. 비우면 텔레그램 silent skip |
 
-> ⚠ `supabase/config.toml` 에서 `verify_jwt = false` 로 게이트웨이 검증을 끄고 있어,
-> Webhook 이 직접 `Authorization` 헤더를 명시적으로 보내야 한다.
-> (게이트웨이의 자동 JWT 첨부는 새 API 키 포맷 `sb_secret_*` 와 호환되지 않음.)
-> 함수 내부에서는 이 헤더가 `Bearer ${SERVICE_ROLE_KEY}` 와 정확히 일치하는지 검증한다.
+`.env` 수정 후 `sh run.sh restart functions` 로 반영한다 (`docker-compose.pizza.yml` 이 functions 컨테이너에 주입).
 
 ## 단독 테스트 (curl)
 
 ```bash
-# .env.local 또는 Supabase Dashboard에서 service_role 키 확인
-SERVICE_ROLE_KEY="<your service role key>"
-PROJECT_REF="sdvcaisxutdnagncxcgd"
+SERVICE_ROLE_KEY="<VPS .env 의 SERVICE_ROLE_KEY>"
 
 curl -X POST \
-  "https://${PROJECT_REF}.supabase.co/functions/v1/send-order-push" \
+  "https://pizza-api.jullyssy.shop/functions/v1/send-order-push" \
   -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
   -H "Content-Type: application/json" \
   -d '{"test": true}'
@@ -75,7 +67,7 @@ curl -X POST \
 }
 ```
 
-- `telegram.enabled = false` → Secrets 미설정 (정상, 비활성 상태)
+- `telegram.enabled = false` → 환경변수 미설정 (정상, 비활성 상태)
 - `telegram.enabled = true && sent = false` → 발사 시도했으나 실패 (BOT_TOKEN/CHAT_ID 오류 가능)
 
 ## Telegram 봇 설정 (선택)
@@ -95,12 +87,15 @@ curl -X POST \
    ```
 3. JSON 응답에서 `"chat":{"id":<숫자>,...}` 의 숫자 = `TELEGRAM_CHAT_ID`
 
-### 3. Secrets 등록 + 재배포
+### 3. VPS `.env` 에 등록 + 재시작
 
 ```bash
-supabase secrets set TELEGRAM_BOT_TOKEN="<위에서 받은 토큰>"
-supabase secrets set TELEGRAM_CHAT_ID="<위에서 받은 숫자>"
-supabase functions deploy send-order-push
+# VPS: /srv/pizza/supabase/.env 에 추가
+TELEGRAM_BOT_TOKEN=<위에서 받은 토큰>
+TELEGRAM_CHAT_ID=<위에서 받은 숫자>
+
+# 반영
+sh run.sh restart functions
 ```
 
 ### 4. 검증
@@ -109,11 +104,7 @@ Admin 페이지의 **🧪 테스트 알림 보내기** 누르거나 위 curl 호
 
 ### 끄고 싶다면
 
-```bash
-supabase secrets unset TELEGRAM_BOT_TOKEN
-supabase secrets unset TELEGRAM_CHAT_ID
-supabase functions deploy send-order-push
-```
+`.env` 에서 두 변수를 지우거나 비운 뒤 `sh run.sh restart functions`.
 
 ## 실패 처리 로직
 
@@ -125,6 +116,8 @@ supabase functions deploy send-order-push
 
 ## 로그 확인
 
-Supabase Dashboard → Edge Functions → `send-order-push` → Logs.
+```bash
+ssh deploy@76.13.187.38 'cd /srv/pizza/supabase && sh run.sh logs functions'
+```
 
 검색어 예: `[send-order-push] order=` / `push failed`

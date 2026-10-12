@@ -9,8 +9,8 @@
 - **Styling**: Tailwind CSS + shadcn/ui
 - **i18n**: next-intl (EN / 中文 / 日本語)
 - **State**: Zustand (장바구니)
-- **DB**: Supabase (Postgres + Realtime)
-- **Deploy**: Vercel
+- **DB**: Supabase self-hosted on VPS (Postgres + Realtime + Storage + Edge Functions)
+- **Deploy**: Vercel (앱) + VPS (Supabase) — 인프라는 `deploy/README.md`
 
 ## 시작하기
 
@@ -25,18 +25,18 @@ npm install
 `.env.local` 파일 생성:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SUPABASE_URL=https://pizza-api.jullyssy.shop
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<VPS /srv/pizza/supabase/.env 의 ANON_KEY>
+SUPABASE_SERVICE_ROLE_KEY=<VPS /srv/pizza/supabase/.env 의 SERVICE_ROLE_KEY>
 ADMIN_PIN=1234
 ADMIN_SESSION_SECRET=your-random-secret-key
 ```
 
 ### 3. Supabase 설정
 
-1. [Supabase Dashboard](https://supabase.com/dashboard)에서 프로젝트 생성
-2. SQL Editor에서 `01_supabase_schema.sql` 실행
-3. `.env.local`에 URL과 키 입력
+1. DB/Realtime/Storage/Edge Function 은 VPS 의 self-hosted Supabase 를 쓴다 (`deploy/README.md`)
+2. 스키마 진실 원천은 `supabase/schema_vps_snapshot.sql` (`supabase/README.md`)
+3. `.env.local` 의 키 3개는 VPS `.env` 값으로 — `deploy/scripts/sync-env-local.ps1` 실행으로 자동 반영
 
 ### 4. 개발 서버
 
