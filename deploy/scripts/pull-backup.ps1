@@ -8,10 +8,11 @@
   - 로그: <Dest>\pull-backup.log
   - -Register : 작업 스케줄러에 매일 09:00 실행 작업(PizzaBackupPull)을 등록한다.
                 PC 가 꺼져 있어 놓친 실행은 다음 기회에 바로 실행된다 (StartWhenAvailable).
-  전제: PowerShell 의 ssh.exe 로 `ssh deploy@...` 가 비밀번호 없이(키 인증) 붙어야 한다.
+  전제: Windows OpenSSH(C:\Windows\System32\OpenSSH\ssh.exe) 로 `ssh deploy@...` 가 비밀번호 없이(키 인증) 붙어야 한다.
+        PowerShell 에서든 Git Bash(Claude Code 의 ! 프롬프트) 에서든 실행 가능 — Git 번들 ssh 는 키가 없어 쓰지 않는다.
 .EXAMPLE
-  powershell -NoProfile -ExecutionPolicy Bypass -File deploy\scripts\pull-backup.ps1
-  powershell -NoProfile -ExecutionPolicy Bypass -File deploy\scripts\pull-backup.ps1 -Register
+  powershell -NoProfile -ExecutionPolicy Bypass -File deploy/scripts/pull-backup.ps1
+  powershell -NoProfile -ExecutionPolicy Bypass -File deploy/scripts/pull-backup.ps1 -Register
 #>
 param(
   [string]$VpsHost = "deploy@76.13.187.38",
@@ -21,6 +22,10 @@ param(
   [switch]$Register
 )
 $ErrorActionPreference = "Stop"
+# Git Bash 에서 띄우면 PATH 앞쪽의 Git 번들 ssh 가 잡혀 키 인증이 실패한다 → 키가 등록된 Windows OpenSSH 를 명시한다.
+$sshExe = Join-Path $env:SystemRoot "System32\OpenSSH\ssh.exe"
+$scpExe = Join-Path $env:SystemRoot "System32\OpenSSH\scp.exe"
+if (-not (Test-Path $sshExe)) { $sshExe = "ssh"; $scpExe = "scp" }
 
 if ($Register) {
   $scriptPath = $MyInvocation.MyCommand.Path
@@ -41,7 +46,7 @@ function Log($msg) {
 }
 
 try {
-  $latest = ssh -o BatchMode=yes -o ConnectTimeout=20 $VpsHost "ls -t $RemoteDir/pizza-db-*.dump 2>/dev/null | head -1; ls -t $RemoteDir/pizza-storage-*.tar.gz 2>/dev/null | head -1"
+  $latest = & $sshExe -o BatchMode=yes -o ConnectTimeout=20 $VpsHost "ls -t $RemoteDir/pizza-db-*.dump 2>/dev/null | head -1; ls -t $RemoteDir/pizza-storage-*.tar.gz 2>/dev/null | head -1"
   if ($LASTEXITCODE -ne 0) { throw "ssh 실패 (exit $LASTEXITCODE)" }
   $files = @($latest | Where-Object { $_ -and $_.Trim() })
   if ($files.Count -eq 0) { throw "원격에 백업 파일이 없음 ($RemoteDir). 먼저 deploy/scripts/vps-backup-check.sh 로 백업을 만들 것" }
@@ -50,7 +55,7 @@ try {
     $name  = Split-Path $remote -Leaf
     $local = Join-Path $Dest $name
     if (Test-Path $local) { Log "skip (이미 있음): $name"; continue }
-    scp -o BatchMode=yes -q "${VpsHost}:$remote" $local
+    & $scpExe -o BatchMode=yes -q "${VpsHost}:$remote" $local
     if ($LASTEXITCODE -ne 0) { throw "scp 실패: $name" }
     $size = (Get-Item $local).Length
     if ($size -lt 1024) { Remove-Item $local; throw "받은 파일이 비정상적으로 작음: $name ($size bytes)" }

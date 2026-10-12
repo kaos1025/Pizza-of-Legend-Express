@@ -5,9 +5,10 @@
   - VPS /srv/pizza/supabase/.env 에서 ANON_KEY, SERVICE_ROLE_KEY 를 ssh 로 읽는다
   - .env.local 의 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY 를 교체한다 (없으면 추가)
   - 기존 파일은 .env.backup-hosted.local 로 백업한다 (gitignore 의 .env*.local 에 걸리므로 커밋되지 않음)
-  전제: PowerShell 의 ssh.exe 로 `ssh deploy@...` 가 비밀번호 없이(키 인증) 붙어야 한다.
+  전제: Windows OpenSSH(C:\Windows\System32\OpenSSH\ssh.exe) 로 `ssh deploy@...` 가 비밀번호 없이(키 인증) 붙어야 한다.
+        PowerShell 에서든 Git Bash(Claude Code 의 ! 프롬프트) 에서든 실행 가능 — Git 번들 ssh 는 키가 없어 쓰지 않는다.
 .EXAMPLE
-  powershell -NoProfile -ExecutionPolicy Bypass -File deploy\scripts\sync-env-local.ps1
+  powershell -NoProfile -ExecutionPolicy Bypass -File deploy/scripts/sync-env-local.ps1
 #>
 param(
   [string]$VpsHost = "deploy@76.13.187.38",
@@ -15,12 +16,15 @@ param(
   [string]$EnvFile = ""
 )
 $ErrorActionPreference = "Stop"
+# Git Bash 에서 띄우면 PATH 앞쪽의 Git 번들 ssh 가 잡혀 키 인증이 실패한다 → 키가 등록된 Windows OpenSSH 를 명시한다.
+$sshExe = Join-Path $env:SystemRoot "System32\OpenSSH\ssh.exe"
+if (-not (Test-Path $sshExe)) { $sshExe = "ssh" }
 if (-not $EnvFile) {
   $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
   $EnvFile  = Join-Path $repoRoot ".env.local"
 }
 
-$lines = ssh -o BatchMode=yes -o ConnectTimeout=20 $VpsHost "grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=' /srv/pizza/supabase/.env"
+$lines = & $sshExe -o BatchMode=yes -o ConnectTimeout=20 $VpsHost "grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=' /srv/pizza/supabase/.env"
 if ($LASTEXITCODE -ne 0) { throw "ssh 실패 (exit $LASTEXITCODE)" }
 $remote = @{}
 foreach ($l in @($lines)) {

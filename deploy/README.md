@@ -59,6 +59,9 @@
 ## 운영
 
 ```bash
+# SSH 키는 Windows OpenSSH(C:\Windows\System32\OpenSSH\ssh.exe)에만 등록돼 있다 — PowerShell 의 ssh 가 그것.
+# Git Bash(Claude Code 의 ! 프롬프트 포함)는 Git 번들 ssh 가 먼저 잡혀 인증이 실패하므로 전체 경로로 호출한다:
+#   /c/Windows/System32/OpenSSH/ssh.exe deploy@76.13.187.38
 ssh deploy@76.13.187.38
 cd /srv/pizza/supabase
 
@@ -70,10 +73,13 @@ sh update.sh --dry-run      # 업데이트 미리보기 (백업 먼저!)
 
 - **백업**: 매일 04:00 cron (`/etc/cron.d/pizza-backup` → `/srv/pizza/backup.sh`)
   → `/srv/pizza-backups/pizza-db-YYYYMMDD.dump`(pg_dump -Fc) + `pizza-storage-*.tar.gz`, 7일 보관.
-  - **검증**: PowerShell 에서 `Get-Content deploy/scripts/vps-backup-check.sh -Raw | ssh deploy@76.13.187.38 "tr -d '\r' | bash -s"`
+  - **검증**: `vps-backup-check.sh` 를 VPS 로 흘려보낸다.
+    PowerShell: `Get-Content deploy/scripts/vps-backup-check.sh -Raw | ssh deploy@76.13.187.38 "tr -d '\r' | bash -s"`
+    / Git Bash: `/c/Windows/System32/OpenSSH/ssh.exe deploy@76.13.187.38 "tr -d '\r' | bash -s" < deploy/scripts/vps-backup-check.sh`
     — 최신 dump 를 임시 DB 에 복원해 public 테이블 행 수를 운영 DB 와 나란히 출력하고 임시 DB 를 지운다 (백업이 없으면 먼저 생성).
   - **오프사이트 사본**: `deploy/scripts/pull-backup.ps1` — 최신 dump + storage tar 를 로컬 PC `F:\juji\pizza-backups` 로 scp.
     `-Register` 스위치로 실행하면 작업 스케줄러에 매일 09:00 작업(PizzaBackupPull)을 등록한다 (PC 가 꺼져 있었으면 다음 기회에 실행).
+    실행: `powershell -NoProfile -ExecutionPolicy Bypass -File deploy/scripts/pull-backup.ps1` — PowerShell·Git Bash 어디서든 되며, 스크립트가 Windows OpenSSH 를 직접 호출한다.
   - **복구**: `pg_restore -U supabase_admin -d postgres --clean <dump>`
 - **Studio**: `https://pizza-api.jullyssy.shop` 루트 (basic auth: `.env` 의 DASHBOARD_USERNAME/PASSWORD)
 - **Edge Function 수정 시**: `volumes/functions/send-order-push/` 교체 후 `sh run.sh restart functions`

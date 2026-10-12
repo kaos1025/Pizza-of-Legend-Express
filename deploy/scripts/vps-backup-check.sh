@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Pizza of Legend Express - VPS backup check. Runs ON the VPS, never writes to the live "postgres" database.
 #
-# Usage (from the repo root, PowerShell):
-#   Get-Content deploy/scripts/vps-backup-check.sh -Raw | ssh deploy@76.13.187.38 "tr -d '\r' | bash -s"
+# Usage (from the repo root):
+#   PowerShell : Get-Content deploy/scripts/vps-backup-check.sh -Raw | ssh deploy@76.13.187.38 "tr -d '\r' | bash -s"
+#   Git Bash   : /c/Windows/System32/OpenSSH/ssh.exe deploy@76.13.187.38 "tr -d '\r' | bash -s" < deploy/scripts/vps-backup-check.sh
+#                (the ssh bundled with Git has no access to the key; Claude Code's "!" prompt is Git Bash)
 #
 # Steps:
 #   1. list /srv/pizza-backups; if no pizza-db-*.dump exists yet, run /srv/pizza/backup.sh once
