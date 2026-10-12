@@ -1,17 +1,19 @@
-# Supabase project config — minimal.
-# 자세한 옵션: https://supabase.com/docs/guides/cli/config
+# Supabase CLI 로컬 설정 — 최소.
+# 2026-10-12 VPS self-hosted 전환 후 호스티드 프로젝트와의 link 는 끊겼다.
+# 배포는 CLI 가 아니라 VPS 에 소스를 복사하는 방식이다 (supabase/README.md, deploy/README.md).
+# project_id 는 `supabase start` 로컬 컨테이너 이름에만 쓰이는 식별자다 (호스티드 ref 아님).
 
-project_id = "sdvcaisxutdnagncxcgd"
+project_id = "pizza-of-legend-express"
 
 # ------------------------------------------------------------
 # Edge Functions
 # ------------------------------------------------------------
 # send-order-push:
-#   새 API 키 포맷(sb_secret_*) 은 JWT 가 아니라서
-#   게이트웨이의 JWT 검증을 통과하지 못한다.
-#   verify_jwt = false 로 게이트웨이 검증을 끄고,
-#   함수 내부의 Authorization === Bearer SERVICE_ROLE_KEY
-#   체크로 인증을 대신한다.
+#   게이트웨이 JWT 검증을 끄고 함수 내부에서
+#   Authorization === Bearer SERVICE_ROLE_KEY 를 직접 비교한다.
+#   (호스티드 시절엔 sb_secret_* 키가 JWT 가 아니라서 필수였고,
+#    VPS 에서는 legacy JWT 키를 쓰지만 패턴은 그대로 유지한다.)
+#   VPS 에서 이 값은 functions 컨테이너 env 로 제어되며,
+#   아래 설정은 CLI 로컬 실행(supabase functions serve)에만 영향을 준다.
 [functions.send-order-push]
 verify_jwt = false
-
