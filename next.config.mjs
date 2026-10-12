@@ -26,8 +26,20 @@ const withPWA = withPWAInit({
     process.env.NEXT_PUBLIC_ENABLE_PWA_DEV !== '1',
 });
 
+// self-hosted Supabase(VPS) 도메인도 next/image 허용 대상에 포함.
+// NEXT_PUBLIC_SUPABASE_URL 은 빌드 시점에 결정되므로 여기서 hostname 을 파생한다.
+const supabaseHost = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').hostname;
+  } catch {
+    return null;
+  }
+})();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Docker 배포용 (deploy/Dockerfile → node server.js)
+  output: 'standalone',
   images: {
     formats: ['image/webp', 'image/avif'],
     remotePatterns: [
@@ -36,6 +48,15 @@ const nextConfig = {
         hostname: '*.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      ...(supabaseHost && !supabaseHost.endsWith('.supabase.co')
+        ? [
+            {
+              protocol: 'https',
+              hostname: supabaseHost,
+              pathname: '/storage/v1/object/public/**',
+            },
+          ]
+        : []),
     ],
   },
 };

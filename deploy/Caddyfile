@@ -1,0 +1,14 @@
+# 앱 도메인 → Next.js
+# TLS 인증서는 Caddy 가 Let's Encrypt 에서 자동 발급/갱신.
+{$APP_DOMAIN} {
+	encode gzip zstd
+	reverse_proxy app:3000
+}
+
+# Supabase API 도메인 → Kong 게이트웨이
+# /rest, /realtime(WebSocket), /storage, /functions 전부 이 경로로 나간다.
+# Studio 대시보드도 이 도메인 루트에서 열림 (Kong basic auth: DASHBOARD_USERNAME/PASSWORD).
+{$API_DOMAIN} {
+	encode gzip zstd
+	reverse_proxy supabase-kong:8000
+}

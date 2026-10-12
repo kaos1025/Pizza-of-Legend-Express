@@ -1,0 +1,21 @@
+# ============================================================
+# self-hosted Supabase 쪽 compose 오버라이드
+#
+# 이 파일을 supabase-docker 디렉토리에 docker-compose.override.yml
+# 이름으로 복사하고, 참조하는 변수들을 그쪽 .env 에 추가한다:
+#   VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_SUBJECT
+#   TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID (선택)
+#
+# 목적: send-order-push Edge Function 에 시크릿 주입 + JWT 게이트웨이 검증 해제
+# (함수가 내부에서 Bearer SERVICE_ROLE_KEY 를 직접 검사하므로 안전)
+# ============================================================
+
+services:
+  functions:
+    environment:
+      VERIFY_JWT: "false"
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@pizzalegend.kr}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
