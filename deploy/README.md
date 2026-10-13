@@ -1,6 +1,6 @@
 # 인프라 구성 — Vercel(앱) + VPS self-hosted Supabase
 
-> 2026-10-12 전환 완료. 비용 문제로 호스티드 Supabase 를 접고 DB/Realtime/Storage/Edge Function 을
+> 2026-10-12 전환 완료, 2026-10-13 호스티드 프로젝트 삭제. 비용 문제로 호스티드 Supabase 를 접고 DB/Realtime/Storage/Edge Function 을
 > VPS(Hostinger, 쿠알라룸푸르, Ubuntu 24.04, RAM 8GB)의 self-hosted Supabase 로 이전했다.
 > **앱은 Vercel 에 그대로** 둔다 — 도메인(pizza-of-legend-express.vercel.app)이 유지되어
 > 호텔 QR·관리자 push 구독·PWA 설치가 전부 보존되기 때문.
@@ -91,22 +91,22 @@ sh update.sh --dry-run      # 업데이트 미리보기 (백업 먼저!)
 - **Edge Function 수정 시**: `volumes/functions/send-order-push/` 교체 후 `sh run.sh restart functions`
 - **방화벽**: ufw — 22, 8443 만 오픈 (8443은 Cloudflare 경유 전용)
 
-## 롤백 (비상)
+## 롤백 (비상) — 2026-10-13 호스티드 삭제로 불가, 기록용
 
 1. Vercel env 3개를 기존 호스티드 값으로 되돌리고 Redeploy
 2. 호스티드 Supabase 프로젝트 resume (pause 상태였다면)
 3. VPS 전환 후 쌓인 주문(`orders`/`order_items`)은 수동 반영 필요
 
-> 호스티드 프로젝트를 삭제한 뒤에는 이 롤백은 불가능하다. 그 이후의 복구 수단은 `/srv/pizza-backups` 또는 로컬 오프사이트 사본의 dump 를 `pg_restore` 하는 것뿐이다.
+> **2026-10-13 호스티드 프로젝트 삭제 완료 — 이 롤백은 더 이상 불가능하다.** 복구 수단은 `/srv/pizza-backups` 또는 로컬 오프사이트 사본의 dump 를 위 "복구" 절차대로 `pg_restore` 하는 것뿐이다.
 
 ## 정리 일정
 
 2026-10-12 결정: 사이트가 당분간 미사용 상태라 "안정 운영 2주" 대기 없이 바로 마무리한다.
 
 - [x] VPS 백업 복구 검증 (`vps-backup-check.sh`) + 오프사이트 사본 1회 확보 (`pull-backup.ps1`) — 2026-10-13 완료 (storage 포함 재검증 통과, 로컬 작업 스케줄러 PizzaBackupPull 등록)
-- [x] `.env.local` 을 VPS 키로 교체 (`deploy/scripts/sync-env-local.ps1`) — 2026-10-13 완료, 이전 파일은 `.env.backup-hosted.local` (호스티드 삭제 후 지울 것)
-- [ ] 호스티드 Supabase: DB 비밀번호 리셋(채팅/스크립트에 노출됨) → pause → 프로젝트 삭제.
-      유료 플랜이면 pause 만으로는 과금이 멈추지 않는다 — org 플랜을 Free 로 내리거나 구독을 취소할 것
+- [x] `.env.local` 을 VPS 키로 교체 (`deploy/scripts/sync-env-local.ps1`) — 2026-10-13 완료, 이전 파일은 `.env.backup-hosted.local` (2026-10-13 삭제함)
+- [x] 호스티드 Supabase: DB 비밀번호 리셋 → pause → 프로젝트 삭제 — 2026-10-13 완료 (ref sdvcaisxutdnagncxcgd 삭제됨, 롤백 경로 소멸)
+      프로젝트를 지워도 org 가 유료 플랜이면 과금은 계속된다 — Organization → Billing 에서 Free 인지 확인할 것
 - [x] Vercel 은 유지 (무료 플랜) — 삭제하지 말 것
 
 ## (참고) 앱까지 VPS 로 옮기고 싶어질 때
