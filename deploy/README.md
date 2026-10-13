@@ -103,8 +103,8 @@ sh update.sh --dry-run      # 업데이트 미리보기 (백업 먼저!)
 
 2026-10-12 결정: 사이트가 당분간 미사용 상태라 "안정 운영 2주" 대기 없이 바로 마무리한다.
 
-- [ ] VPS 백업 복구 검증 (`vps-backup-check.sh`) + 오프사이트 사본 1회 확보 (`pull-backup.ps1`)
-- [ ] `.env.local` 을 VPS 키로 교체 (`deploy/scripts/sync-env-local.ps1`) — 호스티드 pause 전에. 로컬 dev/E2E 가 아직 호스티드를 보고 있음
+- [x] VPS 백업 복구 검증 (`vps-backup-check.sh`) + 오프사이트 사본 1회 확보 (`pull-backup.ps1`) — 2026-10-13 완료 (storage 포함 재검증 통과, 로컬 작업 스케줄러 PizzaBackupPull 등록)
+- [x] `.env.local` 을 VPS 키로 교체 (`deploy/scripts/sync-env-local.ps1`) — 2026-10-13 완료, 이전 파일은 `.env.backup-hosted.local` (호스티드 삭제 후 지울 것)
 - [ ] 호스티드 Supabase: DB 비밀번호 리셋(채팅/스크립트에 노출됨) → pause → 프로젝트 삭제.
       유료 플랜이면 pause 만으로는 과금이 멈추지 않는다 — org 플랜을 Free 로 내리거나 구독을 취소할 것
 - [x] Vercel 은 유지 (무료 플랜) — 삭제하지 말 것
