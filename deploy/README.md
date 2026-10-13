@@ -72,15 +72,21 @@ sh update.sh --dry-run      # 업데이트 미리보기 (백업 먼저!)
 ```
 
 - **백업**: 매일 04:00 cron (`/etc/cron.d/pizza-backup` → `/srv/pizza/backup.sh`)
-  → `/srv/pizza-backups/pizza-db-YYYYMMDD.dump`(pg_dump -Fc) + `pizza-storage-*.tar.gz`, 7일 보관.
+  → `/srv/pizza-backups/pizza-db-YYYYMMDD.dump`(pg_dump -Fc, `--schema=public --schema=storage`) + `pizza-storage-*.tar.gz`(`volumes/storage` 전체), 7일 보관.
+  storage 스키마는 버킷·객체 메타데이터용 — 이게 없으면 tar 의 파일을 복원해도 Storage API 가 서비스하지 못한다 (2026-10-13 추가).
   - **검증**: `vps-backup-check.sh` 를 VPS 로 흘려보낸다.
     PowerShell: `Get-Content deploy/scripts/vps-backup-check.sh -Raw | ssh deploy@76.13.187.38 "tr -d '\r' | bash -s"`
     / Git Bash: `/c/Windows/System32/OpenSSH/ssh.exe deploy@76.13.187.38 "tr -d '\r' | bash -s" < deploy/scripts/vps-backup-check.sh`
-    — 최신 dump 를 임시 DB 에 복원해 public 테이블 행 수를 운영 DB 와 나란히 출력하고 임시 DB 를 지운다 (백업이 없으면 먼저 생성).
+    — 최신 dump 를 임시 DB 에 복원해 public 테이블과 storage.buckets/objects 의 행 수를 운영 DB 와 나란히 출력하고 임시 DB 를 지운다 (백업이 없으면 먼저 생성).
+    임시 DB 엔 auth 스키마가 없어 정책 몇 개가 오류 나는 것은 정상이고, 행 수가 일치하면 통과.
   - **오프사이트 사본**: `deploy/scripts/pull-backup.ps1` — 최신 dump + storage tar 를 로컬 PC `F:\juji\pizza-backups` 로 scp.
     `-Register` 스위치로 실행하면 작업 스케줄러에 매일 09:00 작업(PizzaBackupPull)을 등록한다 (PC 가 꺼져 있었으면 다음 기회에 실행).
     실행: `powershell -NoProfile -ExecutionPolicy Bypass -File deploy/scripts/pull-backup.ps1` — PowerShell·Git Bash 어디서든 되며, 스크립트가 Windows OpenSSH 를 직접 호출한다.
-  - **복구**: `pg_restore -U supabase_admin -d postgres --clean <dump>`
+  - **복구** (빈 스택 기준, 순서대로. 명령은 db 컨테이너 안에서: `docker compose exec -T db <명령> < 파일`):
+    1. public: `pg_restore -U supabase_admin -d postgres --clean --if-exists --schema=public <dump>` — `--schema=public` 을 빼면 `--clean` 이 storage 스키마까지 지운다
+    2. storage 메타: `pg_restore -U supabase_admin -d postgres --data-only -n storage -t buckets -t objects <dump>`
+    3. 파일: `tar -xzf pizza-storage-YYYYMMDD.tar.gz -C /srv/pizza/supabase/volumes` 후 `sh run.sh restart storage`
+    4. `deploy/sql/post-restore.sql` 실행 — publication(realtime)·extension(pg_net)은 스키마 단위 dump 에 안 담긴다
 - **Studio**: `https://pizza-api.jullyssy.shop` 루트 (basic auth: `.env` 의 DASHBOARD_USERNAME/PASSWORD)
 - **Edge Function 수정 시**: `volumes/functions/send-order-push/` 교체 후 `sh run.sh restart functions`
 - **방화벽**: ufw — 22, 8443 만 오픈 (8443은 Cloudflare 경유 전용)

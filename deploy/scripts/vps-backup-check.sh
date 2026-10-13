@@ -10,7 +10,8 @@
 #   1. list /srv/pizza-backups; if no pizza-db-*.dump exists yet, run /srv/pizza/backup.sh once
 #   2. integrity: pg_restore --list on the latest dump, tar -t on the latest storage tarball
 #   3. restore the latest dump into a scratch database (pizza_restore_check), print per-table
-#      row counts next to the live database, then drop the scratch database
+#      row counts (public tables + storage.buckets/objects) next to the live database,
+#      then drop the scratch database
 #
 # The body lives in main() so bash parses the whole script before running any of it. With
 # `bash -s` the script arrives on stdin, and a child that reads stdin (docker exec -i, sudo)
@@ -54,7 +55,8 @@ main() {
   # pg: no stdin attached (psql -c). pgi: stdin is the dump piped in (pg_restore reads the archive from stdin).
   pg()  { docker exec    -e PGPASSWORD="$PW" "$DB" "$@" </dev/null; }
   pgi() { docker exec -i -e PGPASSWORD="$PW" "$DB" "$@"; }
-  COUNT_SQL="select format('%-28s %s', relname, (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from public.%I', relname), false, true, '')))[1]::text) from pg_class where relkind='r' and relnamespace='public'::regnamespace order by relname;"
+  # public tables + storage.buckets/objects (the storage rows are what make the files in the storage tarball servable)
+  COUNT_SQL="select format('%-32s %s', n.nspname||'.'||c.relname, (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I', n.nspname, c.relname), false, true, '')))[1]::text) from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind='r' and (n.nspname='public' or (n.nspname='storage' and c.relname in ('buckets','objects'))) order by 1;"
 
   echo "== dump integrity (pg_restore --list) =="
   n=$(readf "$latest" | pgi pg_restore --list 2>&1 | grep -c 'TABLE DATA' || true)
@@ -72,7 +74,12 @@ main() {
   rm -f "$log"
 
   echo "== row counts: scratch (restored from dump) =="
-  pg psql -h 127.0.0.1 -U supabase_admin -d "$SCRATCH" -Atc "$COUNT_SQL"
+  scratch_counts=$(pg psql -h 127.0.0.1 -U supabase_admin -d "$SCRATCH" -Atc "$COUNT_SQL")
+  echo "$scratch_counts"
+  case "$scratch_counts" in
+    *storage.objects*) ;;
+    *) echo "WARN: dump has no storage.objects - add --schema=storage to the pg_dump in /srv/pizza/backup.sh (see deploy/README.md)" ;;
+  esac
   echo "== row counts: live =="
   pg psql -h 127.0.0.1 -U supabase_admin -d postgres -Atc "$COUNT_SQL"
 
