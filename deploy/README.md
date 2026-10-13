@@ -106,7 +106,7 @@ sh update.sh --dry-run      # 업데이트 미리보기 (백업 먼저!)
 - [x] VPS 백업 복구 검증 (`vps-backup-check.sh`) + 오프사이트 사본 1회 확보 (`pull-backup.ps1`) — 2026-10-13 완료 (storage 포함 재검증 통과, 로컬 작업 스케줄러 PizzaBackupPull 등록)
 - [x] `.env.local` 을 VPS 키로 교체 (`deploy/scripts/sync-env-local.ps1`) — 2026-10-13 완료, 이전 파일은 `.env.backup-hosted.local` (2026-10-13 삭제함)
 - [x] 호스티드 Supabase: DB 비밀번호 리셋 → pause → 프로젝트 삭제 — 2026-10-13 완료 (ref sdvcaisxutdnagncxcgd 삭제됨, 롤백 경로 소멸)
-      프로젝트를 지워도 org 가 유료 플랜이면 과금은 계속된다 — Organization → Billing 에서 Free 인지 확인할 것
+      조직 구독도 2026-10-13 취소함(Free). 이후 Supabase 청구는 0 이어야 하며, 삭제 전 사용량만 마지막 청구서에 한 번 더 잡힐 수 있다
 - [x] Vercel 은 유지 (무료 플랜) — 삭제하지 말 것
 
 ## (참고) 앱까지 VPS 로 옮기고 싶어질 때
