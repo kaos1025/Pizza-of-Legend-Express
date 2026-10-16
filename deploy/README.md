@@ -1,15 +1,17 @@
-# 인프라 구성 — Vercel(앱) + VPS self-hosted Supabase
+# 인프라 구성 — Cloudflare Workers(앱) + VPS self-hosted Supabase
 
 > 2026-10-12 전환 완료, 2026-10-13 호스티드 프로젝트 삭제. 비용 문제로 호스티드 Supabase 를 접고 DB/Realtime/Storage/Edge Function 을
 > VPS(Hostinger, 쿠알라룸푸르, Ubuntu 24.04, RAM 8GB)의 self-hosted Supabase 로 이전했다.
-> **앱은 Vercel 에 그대로** 둔다 — 도메인(pizza-of-legend-express.vercel.app)이 유지되어
-> 호텔 QR·관리자 push 구독·PWA 설치가 전부 보존되기 때문.
+>
+> 2026-10-16 앱도 Vercel(Pro, 월 $20)에서 **Cloudflare Workers Free** 로 이전 (아래 "Cloudflare Workers 배포" 참고).
+> 당시 Vercel 에 남긴 이유였던 호텔 QR·push 구독은 QR 미배포 상태라 재발급·재구독으로 해결했다.
+> 앱 주소는 `*.workers.dev` 서브도메인 — 클라이언트 도메인이 생기면 Worker 의 Custom Domain 으로 붙인다.
 
 ## 아키텍처
 
 ```
 [고객/관리자]
-  ├─ https://pizza-of-legend-express.vercel.app   (Next.js, Vercel, 함수 리전 sin1)
+  ├─ https://pizza-of-legend-express.<account>.workers.dev   (Next.js on Cloudflare Workers, OpenNext)
   └─ https://pizza-api.jullyssy.shop              (Supabase API: REST/Realtime/Storage/Functions)
         │  Cloudflare (Proxied A → 76.13.187.38, Origin Rule 443→8443, SSL Full)
         ▼
@@ -29,18 +31,63 @@
 - `.env` 에 모든 시크릿 (JWT legacy 키 사용 — 앱/함수 인증은 legacy `ANON_KEY`/`SERVICE_ROLE_KEY`)
 - **jullyssy-* 스택/호스트 Caddy(80/443)와 완전 분리** — 피자는 8443만 사용, 그쪽 인프라 건드리지 말 것
 
-## Vercel 쪽 설정
+## Cloudflare Workers 배포
 
-| 항목 | 값 |
-|------|-----|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://pizza-api.jullyssy.shop` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | VPS `.env` 의 `ANON_KEY` (legacy JWT) |
-| `SUPABASE_SERVICE_ROLE_KEY` | VPS `.env` 의 `SERVICE_ROLE_KEY` (legacy JWT) |
-| 함수 리전 | `sin1` (VPS 와 인접) |
-| VAPID/ADMIN/TELEGRAM env | 기존 값 유지 |
+레포 안의 설정: `wrangler.jsonc`, `open-next.config.ts`, `public/_headers`, `package.json` 의 `cf:*` 스크립트.
+`@opennextjs/cloudflare` 는 **1.15.1 에 고정** — 1.16.0 부터 Next 14 지원이 빠졌다. Next 15 로 올릴 때 어댑터도 같이 올린다.
+
+### 환경변수 (Vercel → Cloudflare 이전 체크리스트)
+
+| 변수 | 종류 | 어디에 넣나 |
+|------|------|-------------|
+| `DEPLOY_TARGET=cloudflare` | 공개 | `wrangler.jsonc` vars 에 이미 있음. **Build variables 에도 추가** (next.config 가 빌드 시 읽음) |
+| `NEXT_PUBLIC_SUPABASE_URL` | 공개 | `wrangler.jsonc` vars 에 이미 있음. **Build variables 에도 추가** (번들 인라인) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 공개(번들 노출) | **Build variables** + Variables and Secrets (텍스트) |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | 공개(번들 노출) | **Build variables** + Variables and Secrets (텍스트). 기존 값 그대로 — 바꾸면 구독 전부 무효 |
+| `SUPABASE_SERVICE_ROLE_KEY` | 시크릿 | Variables and Secrets → Secret |
+| `ADMIN_PIN` | 시크릿 | Variables and Secrets → Secret |
+| `ADMIN_SESSION_SECRET` | 시크릿 | Variables and Secrets → Secret |
+| `TELEGRAM_BOT_TOKEN` | 시크릿(선택) | Variables and Secrets → Secret |
+
+`NEXT_PUBLIC_*` 는 `next build` 시점에 번들로 인라인되므로 런타임 변수만 넣으면 클라이언트 코드에 빈 값이 들어간다.
+Workers Builds 의 **Build variables** 와 런타임 Variables 양쪽에 모두 넣어야 한다. 로컬 preview 는 `.dev.vars` (`.dev.vars.example` 복사).
+
+### 대시보드 설정 순서 (Workers Builds)
+
+1. Cloudflare 대시보드 → Workers & Pages → Create → **Import a repository** → GitHub `kaos1025/Pizza-of-Legend-Express`
+2. Worker 이름 `pizza-of-legend-express` (wrangler.jsonc 의 `name` 과 일치해야 한다)
+3. Build 설정
+   - Build command: `npm run cf:build`
+   - Deploy command: `npx opennextjs-cloudflare deploy`
+   - (비프로덕션 브랜치 미리보기용) Non-production branch deploy command: `npx opennextjs-cloudflare upload`
+   - Build variables: 위 표의 "Build variables" 항목 4개
+4. Settings → Variables and Secrets: 위 표의 런타임 변수/시크릿 등록
+5. 첫 배포 후 `https://pizza-of-legend-express.<account>.workers.dev` 에서 확인
+   - `/` → `/en` 307, `/admin/login`, `/sw.js`, `/manifest.json`, `/api/store/business-hours`
+   - Metrics 에서 CPU time p99 확인 — Free 는 요청당 10ms 하드 리밋. 8ms 근처면 Workers Paid($5) 로 올린다
+6. 관리자 폰에서 push 알림 재허용 (origin 이 바뀌어 기존 구독은 무효)
+7. 안정 확인 후 Vercel 프로젝트 삭제 → 팀의 Pro 구독 해지
+
+### 로컬 검증
+
+```bash
+cp .dev.vars.example .dev.vars   # 값 채우기
+npm run cf:build                  # next build + OpenNext 번들 (.open-next/)
+npm run cf:preview                # workerd 로컬 기동 (http://localhost:8787)
+npx wrangler deploy --dry-run --outdir=/tmp/wr   # 번들 크기 확인 (Free 한도: 압축 3MiB, 현재 약 1.2MiB)
+```
+
+### 알려진 차이 / 후속
+
+- `next/image` 는 Cloudflare 빌드에서 `unoptimized` — Workers 에 sharp 가 없다. 메뉴 이미지는 Supabase Storage 원본 그대로 서빙.
+  최적화를 되살리려면 ① `wrangler.jsonc` 에 `images` 바인딩 + `unoptimized` 해제 (Cloudflare Images, 월 5,000 변환 무료) 또는
+  ② Supabase `render/image` 엔드포인트용 커스텀 loader (VPS storage 의 `ENABLE_IMAGE_TRANSFORMATION` 확인 필요).
+- ISR / fetch 캐시는 비활성 (incremental cache 없음). 현재 앱은 동적 라우트 + 클라이언트 fetch 라 영향 없음.
+- `_headers` 로 `/_next/static/*` 1년 immutable 캐시. `sw.js` 는 기본(must-revalidate) 유지.
+- Next 14 는 EOL. Next 15.5 + React 19 업그레이드는 별도 PR 로 진행하고, 그때 `@opennextjs/cloudflare` 를 최신으로 올린다.
 
 `next.config.mjs` 가 `NEXT_PUBLIC_SUPABASE_URL` 호스트를 `next/image` 허용 목록에 자동 추가하므로
-이미지 도메인 설정은 env 만 바꾸면 따라온다.
+이미지 도메인 설정은 env 만 바꾸면 따라온다 (Docker 빌드 경로에서 유효).
 
 ## 이전 과정에서 확정된 사실 (중요)
 
@@ -107,11 +154,15 @@ sh update.sh --dry-run      # 업데이트 미리보기 (백업 먼저!)
 - [x] `.env.local` 을 VPS 키로 교체 (`deploy/scripts/sync-env-local.ps1`) — 2026-10-13 완료, 이전 파일은 `.env.backup-hosted.local` (2026-10-13 삭제함)
 - [x] 호스티드 Supabase: DB 비밀번호 리셋 → pause → 프로젝트 삭제 — 2026-10-13 완료 (ref sdvcaisxutdnagncxcgd 삭제됨, 롤백 경로 소멸)
       조직 구독도 2026-10-13 취소함(Free). 이후 Supabase 청구는 0 이어야 하며, 삭제 전 사용량만 마지막 청구서에 한 번 더 잡힐 수 있다
-- [x] Vercel 은 유지 (무료 플랜) — 삭제하지 말 것
+- [x] ~~Vercel 은 유지 (무료 플랜) — 삭제하지 말 것~~ → 실제로는 Pro($20/월) 였음. 2026-10-16 Cloudflare Workers 로 이전 결정
+- [ ] Cloudflare Workers 첫 배포 + 동작 확인 (위 "대시보드 설정 순서")
+- [ ] 관리자 push 재구독
+- [ ] Vercel `pizza-of-legend-express` 프로젝트 삭제 → 팀 Pro 구독 해지
 
 ## (참고) 앱까지 VPS 로 옮기고 싶어질 때
 
 `deploy/Dockerfile`, `deploy/docker-compose.app.yml`, `deploy/Caddyfile`, `deploy/env.app.example` 은
-앱을 VPS 에서 돌리는 시나리오용으로 남겨둔 것. 단 그 경우 도메인이 바뀌므로 QR 재배포·push 재구독 필요.
+앱을 VPS 에서 돌리는 시나리오용으로 남겨둔 것 (`DEPLOY_TARGET` 미설정 → standalone 출력 + sharp 이미지 최적화 그대로 동작).
+TLS 발급을 위해 피자 앱 전용 도메인이 필요하다 — jullyssy.shop 과는 별개 사업이므로 서브도메인을 빌리지 않는다.
 `deploy/sql/` 와 `deploy/scripts/migrate-storage.mjs` 는 호스티드→VPS 이전 당시 도구 (완료됨, 기록용).
 `deploy/scripts/` 의 나머지(`pull-backup.ps1`, `vps-backup-check.sh`, `sync-env-local.ps1`)는 운영용이다.

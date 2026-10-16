@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pizza-of-legend-express",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-16",
+  // nodejs_compat: Buffer / crypto.createHmac(admin 세션) 등 Node API 사용을 위해 필수
+  // global_fetch_strictly_public: Worker 가 자기 자신의 URL 로 fetch 할 때 필요 (OpenNext 권장)
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "upload_source_maps": true,
+  "assets": {
+    // next-pwa 가 생성한 public/sw.js, workbox-*.js 와 _next/static 이 모두 여기로 복사된다.
+    // 정적 자산 요청은 Workers 요청 수에 카운트되지 않는다 (무료·무제한).
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // Paid 플랜으로 올리면 요청당 CPU 상한을 걸어 비용 폭주를 막을 수 있다 (Free 는 10ms 하드 리밋이라 불필요):
+  //   "limits": { "cpu_ms": 50 },
+  // ---------------------------------------------------------------------------
+  // 환경변수
+  //   - 비밀이 아닌 공개 값은 아래 vars 에 둔다. NEXT_PUBLIC_* 는 번들에 인라인되므로
+  //     Workers Builds 의 "Build variables" 에도 동일하게 넣어야 빌드 산출물에 들어간다.
+  //   - 시크릿(SUPABASE_SERVICE_ROLE_KEY, ADMIN_PIN, ADMIN_SESSION_SECRET, TELEGRAM_BOT_TOKEN)은
+  //     절대 여기 적지 말고 `wrangler secret put <NAME>` 또는
+  //     (VAPID 개인키는 앱이 아니라 VPS 의 send-order-push Edge Function 이 가진다 — 여기엔 공개키만 필요)
+  //     대시보드 Settings → Variables and Secrets 에서 등록한다.
+  //   - 로컬 preview 는 .dev.vars (gitignore 됨) 에서 읽는다.
+  // ---------------------------------------------------------------------------
+  "vars": {
+    "DEPLOY_TARGET": "cloudflare",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://pizza-api.jullyssy.shop"
+  }
+  // ---------------------------------------------------------------------------
+  // (선택) ISR / fetch 캐시를 쓰게 되면 아래를 켠다. 현재 앱은 동적 라우트 + 클라이언트 fetch 라 불필요.
+  //   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "pizza-of-legend-express" }],
+  //   "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "pizza-next-cache" }]
+  // (선택) next/image 최적화를 Cloudflare Images 로 돌리려면:
+  //   "images": { "binding": "IMAGES" }  + next.config.mjs 의 unoptimized 해제
+  //   무료 플랜은 월 5,000 유니크 변환까지 무료. 메뉴 이미지 수십 장 규모면 충분.
+  // ---------------------------------------------------------------------------
+}

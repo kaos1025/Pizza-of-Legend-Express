@@ -9,13 +9,19 @@
     "lint": "next lint",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "cf:build": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build",
+    "cf:preview": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf:upload": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@opennextjs/cloudflare": "1.15.1",
     "@supabase/supabase-js": "^2.99.3",
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
@@ -39,10 +45,12 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "cross-env": "^10.1.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.151.0"
   }
 }
