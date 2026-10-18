@@ -7,6 +7,15 @@
   // global_fetch_strictly_public: Worker 가 자기 자신의 URL 로 fetch 할 때 필요 (OpenNext 권장)
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "upload_source_maps": true,
+  // 대시보드에서 넣은 Text 변수를 wrangler deploy 가 지우지 않도록 한다.
+  // (기본값 false 면 매 배포마다 아래 vars 만 남기고 대시보드 변수를 전부 삭제한다 — 2026-10-18 실제로 당함)
+  // Secret 타입은 이 설정과 무관하게 항상 유지된다.
+  "keep_vars": true,
+  // 아래 시크릿이 Worker 에 없으면 배포 자체가 실패한다 — 시크릿 누락 상태로 운영에 올라가는 것을 막는다.
+  // 등록: 대시보드 Settings → Variables and Secrets → 타입 Secret, 또는 `wrangler secret put <NAME>`
+  "secrets": {
+    "required": ["ADMIN_PIN", "ADMIN_SESSION_SECRET", "SUPABASE_SERVICE_ROLE_KEY"]
+  },
   "assets": {
     // next-pwa 가 생성한 public/sw.js, workbox-*.js 와 _next/static 이 모두 여기로 복사된다.
     // 정적 자산 요청은 Workers 요청 수에 카운트되지 않는다 (무료·무제한).
