@@ -21,7 +21,9 @@
 - **State**: Zustand (장바구니, UI 상태)
 - **DB**: Supabase self-hosted on VPS (Postgres + Realtime + Storage + Edge Functions) — 인프라 `deploy/README.md`, 스키마 진실 `supabase/schema_vps_snapshot.sql`
 - **PWA**: next-pwa
-- **Deploy**: Vercel (앱) + VPS (self-hosted Supabase)
+- **Deploy**: Cloudflare Workers (앱, OpenNext 어댑터 — `deploy/README.md` "Cloudflare Workers 배포" 참고) + VPS (self-hosted Supabase)
+  - 로컬 검증: `npm run cf:build` → `npm run cf:preview` (`.dev.vars.example` 참고)
+  - `@opennextjs/cloudflare` 는 **1.15.1 고정** — 1.16+ 는 Next 14 를 지원하지 않는다. Next 15 로 올릴 때 함께 올릴 것
 
 ---
 

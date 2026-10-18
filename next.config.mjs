@@ -21,6 +21,9 @@ const withPWA = withPWAInit({
     /app-build-manifest\.json$/,
     /middleware-manifest\.json$/,
   ],
+  // public/_headers 는 Cloudflare 가 헤더 규칙으로 파싱만 하고 정적 자산으로 서빙하지 않는다.
+  // precache 에 들어가면 설치 시 404 → Workbox rollback 이 나므로 제외한다.
+  publicExcludes: ['!noprecache/**/*', '!_headers'],
   disable:
     process.env.NODE_ENV === 'development' &&
     process.env.NEXT_PUBLIC_ENABLE_PWA_DEV !== '1',
@@ -36,11 +39,20 @@ const supabaseHost = (() => {
   }
 })();
 
+// 배포 타겟. 'cloudflare' 는 npm run cf:* 스크립트(cross-env) 와 wrangler.jsonc vars 가 주입한다.
+// Vercel / Docker 빌드에서는 비어 있다.
+const isCloudflare = process.env.DEPLOY_TARGET === 'cloudflare';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Docker 배포용 (deploy/Dockerfile → node server.js)
+  // Docker 배포용 (deploy/Dockerfile → node server.js). OpenNext 도 내부적으로 standalone 출력을 사용한다.
   output: 'standalone',
   images: {
+    // Cloudflare Workers 에는 sharp 기반 /_next/image 최적화 서버가 없다.
+    // 메뉴 이미지는 Supabase Storage(VPS, imgproxy 포함) 원본을 그대로 쓰고,
+    // 필요해지면 Cloudflare Images 바인딩(wrangler.jsonc 주석) 또는 Supabase render 엔드포인트용
+    // 커스텀 loader 로 전환한다.
+    unoptimized: isCloudflare,
     formats: ['image/webp', 'image/avif'],
     remotePatterns: [
       {
