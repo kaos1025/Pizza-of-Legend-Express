@@ -8,6 +8,7 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
+  const [notConfigured, setNotConfigured] = useState(false);
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const hiddenInputRef = useRef<HTMLInputElement>(null);
@@ -28,6 +29,10 @@ export default function AdminLoginPage() {
       if (res.ok) {
         router.push('/admin');
         router.refresh();
+      } else if (res.status === 503) {
+        // 운영 시크릿(ADMIN_PIN / ADMIN_SESSION_SECRET) 미등록 — PIN 을 다시 눌러도 소용없다
+        setNotConfigured(true);
+        setPin('');
       } else {
         setError(true);
         setShake(true);
@@ -133,7 +138,9 @@ export default function AdminLoginPage() {
 
       {/* Status message */}
       <div className="h-6 mb-4">
-        {error && (
+        {notConfigured ? (
+          <p className="text-amber-400 text-sm">관리자 시크릿이 설정되지 않았습니다 (ADMIN_PIN / ADMIN_SESSION_SECRET)</p>
+        ) : error && (
           <p className="text-red-400 text-sm animate-pulse">잘못된 PIN입니다</p>
         )}
         {loading && (

@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSessionToken, verifyPin, COOKIE_NAME } from '@/lib/admin/session';
+import { createSessionToken, verifyPin, isAdminConfigured, COOKIE_NAME } from '@/lib/admin/session';
 
 export async function POST(request: NextRequest) {
   try {
+    // 운영에서 ADMIN_PIN / ADMIN_SESSION_SECRET 이 빠져 있으면 "Invalid PIN" 으로 숨기지 말고
+    // 설정 누락임을 드러낸다 (기본 PIN 으로 열리던 폴백 제거에 따른 진단용).
+    if (!isAdminConfigured()) {
+      return NextResponse.json({ error: 'Admin is not configured' }, { status: 503 });
+    }
+
     const { pin } = await request.json();
 
     if (!pin || typeof pin !== 'string') {
