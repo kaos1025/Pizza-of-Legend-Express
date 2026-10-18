@@ -42,12 +42,17 @@
 |------|------|-------------|
 | `DEPLOY_TARGET=cloudflare` | 공개 | `wrangler.jsonc` vars 에 이미 있음. **Build variables 에도 추가** (next.config 가 빌드 시 읽음) |
 | `NEXT_PUBLIC_SUPABASE_URL` | 공개 | `wrangler.jsonc` vars 에 이미 있음. **Build variables 에도 추가** (번들 인라인) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 공개(번들 노출) | **Build variables** + Variables and Secrets (텍스트) |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | 공개(번들 노출) | **Build variables** + Variables and Secrets (텍스트). 기존 값 그대로 — 바꾸면 구독 전부 무효 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 공개(번들 노출) | **Build variables** + Variables and Secrets (**Secret 타입 권장**) |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | 공개(번들 노출) | **Build variables** + Variables and Secrets (**Secret 타입 권장**). 기존 값 그대로 — 바꾸면 구독 전부 무효 |
 | `SUPABASE_SERVICE_ROLE_KEY` | 시크릿 | Variables and Secrets → Secret |
 | `ADMIN_PIN` | 시크릿 | Variables and Secrets → Secret |
 | `ADMIN_SESSION_SECRET` | 시크릿 | Variables and Secrets → Secret |
 | `TELEGRAM_BOT_TOKEN` | 시크릿(선택) | Variables and Secrets → Secret |
+
+> **런타임 변수는 전부 Secret 타입으로 넣는다.** 2026-10-18 첫 배포 때 Text 타입으로 넣은 변수가 다음 `wrangler deploy` 에서
+> 모두 삭제됐다 (Wrangler 기본 동작: 대시보드 변수를 지우고 `wrangler.jsonc` 의 `vars` 만 남김). 이후 `keep_vars: true` 를
+> 넣어 Text 도 살아남게 했지만, Secret 은 설정과 무관하게 항상 유지되므로 Secret 이 안전하다.
+> `secrets.required` 에 선언된 `ADMIN_PIN` / `ADMIN_SESSION_SECRET` / `SUPABASE_SERVICE_ROLE_KEY` 가 Worker 에 없으면 배포가 실패한다.
 
 `NEXT_PUBLIC_*` 는 `next build` 시점에 번들로 인라인되므로 런타임 변수만 넣으면 클라이언트 코드에 빈 값이 들어간다.
 Workers Builds 의 **Build variables** 와 런타임 Variables 양쪽에 모두 넣어야 한다. 로컬 preview 는 `.dev.vars` (`.dev.vars.example` 복사).
